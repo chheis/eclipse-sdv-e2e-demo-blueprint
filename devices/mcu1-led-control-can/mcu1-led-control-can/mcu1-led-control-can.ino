@@ -3,19 +3,26 @@
 #include <107-Arduino-MCP2515.h>
 #undef max
 #undef min
-#include <algorithm>
 
-/**Globals for LED Stripe**/
+/**Globals for LED Strip**/
 #define NUM_LEDS 8    // Number of LEDs in the chain
 #define DATA_PIN 6    // Data pin for LED control
 
+static uint8_t const LEFT_LED_INDEXES[]  = {0, 1};
+static uint8_t const BRAKE_LED_INDEXES[] = {3, 4};
+static uint8_t const RIGHT_LED_INDEXES[] = {6, 7};
+
 CRGB leds[NUM_LEDS];  // Array to hold LED color data
-/**END Globals for LED Stripe**/
+/**END Globals for LED Strip**/
 
 /*Globals for CAN MCP2515 */
 static int const MKRCAN_MCP2515_CS_PIN  = 10;
 static int const MKRCAN_MCP2515_INT_PIN = 2;
-static SPISettings const MCP2515x_SPI_SETTING{1000000, MSBFIRST, SPI_MODE0};
+static uint16_t const CAN_ID_COMMAND = 0x120;
+static uint16_t const CAN_ID_STATUS  = 0x121;
+static uint8_t const CAN_SIGNAL_LEFT_BIT  = 0;
+static uint8_t const CAN_SIGNAL_RIGHT_BIT = 1;
+static uint8_t const CAN_SIGNAL_BRAKE_BIT = 2;
 
 /**************************************************************************************
  * FUNCTION DECLARATION
@@ -27,14 +34,15 @@ void onReceiveBufferFull(uint32_t const, uint32_t const, uint8_t const *, uint8_
  * TYPEDEF
  **************************************************************************************/
 
-typedef struct
-{
-  uint32_t id;
-  uint8_t  data[8];
-  uint8_t  len;
-} sCanTestFrame;
+struct LightState {
+  bool left;
+  bool right;
+  bool brake;
+};
 
 bool canRxPending = false;
+
+LightState requestedState = {false, false, false};
 
 typedef struct {
   uint32_t ts;
@@ -49,24 +57,6 @@ CanRxFrame rxFrame;
  * GLOBAL CONSTANTS
  **************************************************************************************/
 
-static sCanTestFrame const test_frame_1 = { 0x00000001, {0}, 0 };                                              /* Minimum (no) payload */
-static sCanTestFrame const test_frame_2 = { 0x00000002, {0xCA, 0xFE, 0xCA, 0xFE, 0, 0, 0, 0}, 4 };             /* Between minimum and maximum payload */
-static sCanTestFrame const test_frame_3 = { 0x00000003, {0xCA, 0xFE, 0xCA, 0xFE, 0xCA, 0xFE, 0xCA, 0xFE}, 8 }; /* Maximum payload */
-static sCanTestFrame const test_frame_4 = { 0x40000004, {0}, 0 };                                              /* RTR frame */
-static sCanTestFrame const test_frame_5 = { 0x000007FF, {0}, 0 };                                              /* Highest standard 11 bit CAN address */
-static sCanTestFrame const test_frame_6 = { 0x80000000, {0}, 0 };                                              /* Lowest extended 29 bit CAN address */
-static sCanTestFrame const test_frame_7 = { 0x9FFFFFFF, {0}, 0 };                                              /* Highest extended 29 bit CAN address */
-
-static std::array<sCanTestFrame, 7> const CAN_TEST_FRAME_ARRAY =
-{
-  test_frame_1,
-  test_frame_2,
-  test_frame_3,
-  test_frame_4,
-  test_frame_5,
-  test_frame_6,
-  test_frame_7
-};
 /*END Globals for CAN MCP2515 */
 
 // void onReceiveBufferFull(uint32_t const timestamp_us, uint32_t const id, uint8_t const * data, uint8_t const len)
@@ -92,7 +82,6 @@ void setup() {
   while(!Serial) { }
 
   SPI.begin();
-  //SPI.beginTransaction(MCP2515x_SPI_SETTING);
   pinMode(MKRCAN_MCP2515_CS_PIN, OUTPUT);
   digitalWrite(MKRCAN_MCP2515_CS_PIN, HIGH);
 
@@ -154,87 +143,63 @@ void onReceiveBufferFull(uint32_t const timestamp_us,
 // }
 
 void loop() {
-  static uint32_t lastLedUpdate = 0;
+  static uint32_t lastBlinkToggle = 0;
   static uint32_t lastCanTx     = 0;
-  static uint8_t  ledIndex     = 0;
-  static bool     ledOn        = false;
+  static bool     blinkOn       = false;
 
   uint32_t now = millis();
 
-  /* ---------- LED animation (non-blocking) ---------- */
-  if (now - lastLedUpdate >= 30) {
-    lastLedUpdate = now;
-
-    fill_solid(leds, NUM_LEDS, CRGB::Black);
-
-    if (ledOn) {
-      leds[ledIndex] = CRGB::Blue;
-      ledIndex = (ledIndex + 1) % NUM_LEDS;
-    }
-
-    ledOn = !ledOn;
-    FastLED.show();
-  }
-
-  /* ---------- CAN transmit (rate limited) ----------- */
-  if (now - lastCanTx >= 100) {
-    lastCanTx = now;
-
-    uint8_t data[8] = {
-      0xDE, 0xAD, 0xBE, 0xEF,
-      0xDE, 0xAD, 0xBE, 0xEF
-    };
-
-    mcp2515.transmit(0x01, data, 8);
-    Serial.println("Send Frame");
-  }
   if (canRxPending) {
     noInterrupts();
     CanRxFrame f = rxFrame;
     canRxPending = false;
     interrupts();
 
-    Serial.print("[ ");
-    Serial.print(f.ts);
-    Serial.print(" ] ID ");
-
-    if (f.id & MCP2515::CAN_EFF_BITMASK) Serial.print("(EXT)");
-    if (f.id & MCP2515::CAN_RTR_BITMASK) Serial.print("(RTR)");
-
-    Serial.print(" ");
-    Serial.print(f.id, HEX);
-    Serial.print(" DATA[");
-
-    Serial.print(f.len);
-    Serial.print("] ");
-
-    for (uint8_t i = 0; i < f.len; i++) {
-      Serial.print(f.data[i], HEX);
-      Serial.print(" ");
+    if (!(f.id & MCP2515::CAN_EFF_BITMASK) && f.id == CAN_ID_COMMAND && f.len >= 1) {
+      uint8_t flags = f.data[0];
+      requestedState.left = (flags >> CAN_SIGNAL_LEFT_BIT) & 0x01;
+      requestedState.right = (flags >> CAN_SIGNAL_RIGHT_BIT) & 0x01;
+      requestedState.brake = (flags >> CAN_SIGNAL_BRAKE_BIT) & 0x01;
     }
-    Serial.println();
   }
-  
-  // // Loop through each LED and set it to blue
-  // for (int dot = 0; dot < NUM_LEDS; dot++) {
-  //   leds[dot] = CRGB::Blue;   // Set the current LED to blue
-  //   //FastLED.show();           // Update LEDs
-  //   leds[dot] = CRGB::Black;  // Clear the current LED
-  //   delay(30);                // Wait for a short period before moving to the next LED
-  // }
 
-  // fill_solid(leds, NUM_LEDS, CRGB::Blue);
-  // FastLED.show();
-  // delay(240);
-  // fill_solid(leds, NUM_LEDS, CRGB::Black);
-  // FastLED.show();
+  /* ---------- LED animation (non-blocking) ---------- */
+  if (now - lastBlinkToggle >= 500) {
+    lastBlinkToggle = now;
+    blinkOn = !blinkOn;
+  }
 
-  // uint8_t const data[8] = {0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF};
-  // mcp2515.transmit(1 /* id */, data, 8 /* len */);
-  // Serial.println("Send Frame");
+  fill_solid(leds, NUM_LEDS, CRGB::Black);
 
+  if (requestedState.left && blinkOn) {
+    for (uint8_t index : LEFT_LED_INDEXES) {
+      leds[index] = CRGB::Orange;
+    }
+  }
 
+  if (requestedState.right && blinkOn) {
+    for (uint8_t index : RIGHT_LED_INDEXES) {
+      leds[index] = CRGB::Orange;
+    }
+  }
 
-  //delay(100);
-  
+  if (requestedState.brake) {
+    for (uint8_t index : BRAKE_LED_INDEXES) {
+      leds[index] = CRGB::Red;
+    }
+  }
+
+  FastLED.show();
+
+  /* ---------- CAN transmit (rate limited) ----------- */
+  if (now - lastCanTx >= 100) {
+    lastCanTx = now;
+
+    uint8_t data[8] = {0};
+    data[0] = (requestedState.left ? (1 << CAN_SIGNAL_LEFT_BIT) : 0) |
+              (requestedState.right ? (1 << CAN_SIGNAL_RIGHT_BIT) : 0) |
+              (requestedState.brake ? (1 << CAN_SIGNAL_BRAKE_BIT) : 0);
+
+    mcp2515.transmit(CAN_ID_STATUS, data, 1);
+  }
 }
