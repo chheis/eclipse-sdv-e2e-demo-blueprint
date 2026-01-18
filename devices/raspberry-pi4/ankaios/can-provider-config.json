@@ -1,0 +1,41 @@
+{
+  "can": {
+    "interface": "can0",
+    "useFd": false
+  },
+  "signals": [
+    {
+      "vssPath": "Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling",
+      "canId": "0x120",
+      "byteIndex": 0,
+      "bitIndex": 0,
+      "length": 1,
+      "factor": 1,
+      "offset": 0,
+      "isSigned": false,
+      "direction": "tx"
+    },
+    {
+      "vssPath": "Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling",
+      "canId": "0x120",
+      "byteIndex": 0,
+      "bitIndex": 1,
+      "length": 1,
+      "factor": 1,
+      "offset": 0,
+      "isSigned": false,
+      "direction": "tx"
+    },
+    {
+      "vssPath": "Vehicle.Body.Lights.Brake.IsActive",
+      "canId": "0x120",
+      "byteIndex": 0,
+      "bitIndex": 2,
+      "length": 1,
+      "factor": 1,
+      "offset": 0,
+      "isSigned": false,
+      "direction": "tx"
+    }
+  ]
+}

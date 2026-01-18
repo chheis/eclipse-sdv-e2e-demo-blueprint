@@ -15,6 +15,20 @@ This node runs the Fleet Management Blueprint components plus the vehicle signal
 
 Use the VSS mapping defined in [`docs/vss-can-signals.md`](../../docs/vss-can-signals.md) to wire the CAN provider to the Arduino blinker ECU.
 
+## Ankaios workload (Kuksa Databroker + CAN provider)
+
+Use the example Ankaios manifest in `devices/raspberry-pi4/ankaios/vehicle-signals.yaml`. It defines the Kuksa Databroker and the Kuksa CAN Provider containers as Podman workloads.
+
+1. Copy `devices/raspberry-pi4/ankaios/vehicle-signals.yaml` into your Ankaios manifests directory.
+2. Place VSS metadata at `/opt/kuksa/vss/vss.json` on the Raspberry Pi 4.
+3. Copy `devices/raspberry-pi4/ankaios/can-provider-config.json` to `/opt/kuksa/can-provider/can-provider-config.json` and adjust:
+   - `can.interface` to your SocketCAN device (default: `can0`)
+   - `signals` if you change the CAN IDs or VSS paths
+
+The template config marks all signals as TX-only so the provider only writes CAN frames (no CAN read-back). If your kuksa-can-provider version uses a different key/value for transmit-only mappings, update the `direction` field accordingly.
+
+The manifest uses host networking so the CAN provider can reach the databroker at `localhost:55555`.
+
 ## Helpful upstream references
 
 - Fleet Management Blueprint: https://github.com/eclipse-sdv-blueprints/fleet-management

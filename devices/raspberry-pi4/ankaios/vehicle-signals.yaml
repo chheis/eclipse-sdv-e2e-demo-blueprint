@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Manifest
+metadata:
+  name: vehicle-signals
+spec:
+  workloads:
+    kuksa-databroker:
+      runtime: podman
+      restartPolicy: always
+      runtimeConfig: |
+        image: ghcr.io/eclipse-kuksa/kuksa-databroker:0.6.0
+        network: host
+        command:
+          - "--insecure"
+          - "--metadata"
+          - "/data/vss.json"
+        volumes:
+          - /opt/kuksa/vss:/data:ro
+    kuksa-can-provider:
+      runtime: podman
+      restartPolicy: always
+      runtimeConfig: |
+        image: ghcr.io/eclipse-kuksa/kuksa-can-provider:0.3.0
+        network: host
+        privileged: true
+        command:
+          - "--config"
+          - "/config/can-provider-config.json"
+        volumes:
+          - /opt/kuksa/can-provider:/config:ro
