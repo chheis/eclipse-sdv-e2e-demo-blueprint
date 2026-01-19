@@ -4,7 +4,7 @@ This device represents a manual driver input ECU for the blinkers.
 
 ## Responsibilities
 
-- Capture joystick or button input.
+- - Capture joystick input from an analog Joystick: https://docs.sunfounder.com/projects/elite-explorer-kit/de/latest/basic_projects/20_basic_joystick.html
 - Send VSS-aligned blinker requests to the Raspberry Pi 4 via Ethernet/Wi-Fi and gRPC to the Kuksa databroker.
 - Set target values:
   - `Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling`
