@@ -1,1 +1,3 @@
 .vscode
+/devices/driver-input-ecu-arduino/mcu2-joystick-input/arduino_secrets.h
+**/libraries/
