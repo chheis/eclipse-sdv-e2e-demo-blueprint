@@ -4,33 +4,31 @@ This device represents a manual driver input ECU for the blinkers.
 
 ## Responsibilities
 
-- - Capture joystick input from an analog Joystick: https://docs.sunfounder.com/projects/elite-explorer-kit/de/latest/basic_projects/20_basic_joystick.html
-- Send VSS-aligned blinker requests to the Raspberry Pi 4 via Ethernet/Wi-Fi and gRPC to the Kuksa databroker.
+- Capture joystick input from an analog Joystick: https://docs.sunfounder.com/projects/elite-explorer-kit/de/latest/basic_projects/20_basic_joystick.html
+- Publish VSS-aligned blinker requests to the Raspberry Pi 4 via Ethernet/Wi-Fi using Zenoh.
 - Set target values:
   - `Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling`
   - `Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling`
   - `Vehicle.Body.Lights.Brake.IsActive`
 
-## gRPC publishing details
+## Zenoh publishing details
 
-Use the Kuksa Databroker gRPC API on the Raspberry Pi 4 to publish joystick state.
+The Arduino sketch publishes a JSON payload whenever the joystick state changes.
 
-- gRPC endpoint: `<pi4-ip>:55555`
-- Service: `kuksa.val.v1.Val/Set`
-- Update target values on every joystick change (left/right/brake).
+- Zenoh router endpoint: `tcp/<pi4-ip>:7447`
+- Key expression: `Vehicle/Body/Lights/Signals`
+- Update payload on every joystick change (left/right/brake).
 
-Example (using `grpcurl` from a dev machine):
+Example payload:
 
-```bash
-grpcurl -plaintext -d '{
-  "updates": [
-    {"entry": {"path": "Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling"}, "value": {"bool": true}},
-    {"entry": {"path": "Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling"}, "value": {"bool": false}},
-    {"entry": {"path": "Vehicle.Body.Lights.Brake.IsActive"}, "value": {"bool": false}}
-  ]
-}' <pi4-ip>:55555 kuksa.val.v1.Val/Set
+```json
+{
+  "Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling": true,
+  "Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling": false,
+  "Vehicle.Body.Lights.Brake.IsActive": false
+}
 ```
 
 ## Status
 
-Implementation placeholder for the demo architecture.
+Zenoh-based publishing implemented in the Arduino sketch.

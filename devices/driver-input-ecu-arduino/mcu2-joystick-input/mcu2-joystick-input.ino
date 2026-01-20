@@ -1,5 +1,7 @@
+#define ZENOH_ARDUINO_UNO_R4_WIFI 1
+
 #include <WiFiS3.h>
-#include <ArduinoMqttClient.h>
+#include <zenoh-pico.h>
 #include "arduino_secrets.h"
 
 char ssid[] = SECRET_SSID;    // your network SSID (name)
@@ -7,11 +9,10 @@ char pass[] = SECRET_PASS;    // your network password (use for WPA, or use as k
 int status = WL_IDLE_STATUS;  // the WiFi radio's status
 
 WiFiClient wifiClient;
-MqttClient mqttClient(wifiClient);
 
-const char broker[] = "192.168.0.100";
-const int brokerPort = 1883;
-const char topic[] = "InVehicleTopics";
+const char zenohMode[] = "client";
+const char zenohLocator[] = "tcp/192.168.0.100:7447";
+const char zenohKeyexpr[] = "Vehicle/Body/Lights/Signals";
 
 const int xPin = A0;  // VRX attach
 const int swPin = 8;  // SW attach (pressed = LOW)
@@ -22,6 +23,12 @@ const int joystickDeadzone = 120;
 bool leftIsSignaling = false;
 bool rightIsSignaling = false;
 bool brakeIsActive = false;
+
+z_owned_session_t zenohSession;
+z_owned_publisher_t zenohPublisher;
+bool zenohReady = false;
+unsigned long lastZenohKeepAliveMs = 0;
+const unsigned long zenohKeepAliveIntervalMs = 1000;
 
 void setup() {
   // set PINs for Joystick
@@ -58,27 +65,21 @@ void setup() {
   printCurrentNet();
   printWifiData();
 
-  Serial.print("Attempting to connect to the MQTT broker: ");
-  Serial.println(broker);
-
-  if (!mqttClient.connect(broker, brokerPort)) {
-    Serial.print("MQTT connection failed! Error code = ");
-    Serial.println(mqttClient.connectError());
-
-    while (true) {
-      delay(1000);
-    }
-  }
-
-  Serial.println("You're connected to the MQTT broker!");
-  Serial.println();
+  initZenoh();
 }
 
 void loop() {
-  mqttClient.poll();
-
   int xValue = analogRead(xPin);
   bool swPressed = (digitalRead(swPin) == LOW);
+
+  if (zenohReady) {
+    zp_read(z_session_loan(&zenohSession), NULL);
+    unsigned long now = millis();
+    if (now - lastZenohKeepAliveMs >= zenohKeepAliveIntervalMs) {
+      zp_send_keep_alive(z_session_loan(&zenohSession), NULL);
+      lastZenohKeepAliveMs = now;
+    }
+  }
 
   bool newLeft = xValue < (joystickCenter - joystickDeadzone);
   bool newRight = xValue > (joystickCenter + joystickDeadzone);
@@ -88,7 +89,7 @@ void loop() {
     leftIsSignaling = newLeft;
     rightIsSignaling = newRight;
     brakeIsActive = newBrake;
-    sendMqttUpdate(leftIsSignaling, rightIsSignaling, brakeIsActive);
+    sendZenohUpdate(leftIsSignaling, rightIsSignaling, brakeIsActive);
   }
 
   delay(50);
@@ -145,7 +146,43 @@ void printMacAddress(byte mac[]) {
 }
 
 
-void sendMqttUpdate(bool left, bool right, bool brake) {
+void initZenoh() {
+#if Z_FEATURE_PUBLICATION == 1
+  z_owned_config_t config;
+  z_config_default(&config);
+  zp_config_insert(z_config_loan_mut(&config), Z_CONFIG_MODE_KEY, zenohMode);
+  if (strlen(zenohLocator) > 0) {
+    zp_config_insert(z_config_loan_mut(&config), Z_CONFIG_CONNECT_KEY, zenohLocator);
+  }
+
+  Serial.print("Opening Zenoh session...");
+  if (z_open(&zenohSession, z_config_move(&config), NULL) < 0) {
+    Serial.println("failed");
+    return;
+  }
+  Serial.println("ok");
+
+  z_view_keyexpr_t ke;
+  z_view_keyexpr_from_str_unchecked(&ke, zenohKeyexpr);
+  Serial.print("Declaring Zenoh publisher: ");
+  Serial.println(zenohKeyexpr);
+  if (z_declare_publisher(z_session_loan(&zenohSession), &zenohPublisher, z_view_keyexpr_loan(&ke), NULL) < 0) {
+    Serial.println("Unable to declare Zenoh publisher");
+    z_session_drop(z_session_move(&zenohSession));
+    return;
+  }
+
+  zenohReady = true;
+#else
+  Serial.println("Zenoh publication feature disabled at build time.");
+#endif
+}
+
+void sendZenohUpdate(bool left, bool right, bool brake) {
+  if (!zenohReady) {
+    return;
+  }
+
   String payload = "{";
   payload += "\"Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling\":";
   payload += (left ? "true" : "false");
@@ -157,10 +194,12 @@ void sendMqttUpdate(bool left, bool right, bool brake) {
   payload += (brake ? "true" : "false");
   payload += "}";
 
-  Serial.println("Publishing to MQTT:");
+  Serial.println("Publishing to Zenoh:");
   Serial.println(payload);
 
-  mqttClient.beginMessage(topic);
-  mqttClient.print(payload);
-  mqttClient.endMessage();
+  z_owned_bytes_t bytes;
+  z_bytes_copy_from_str(&bytes, payload.c_str());
+  if (z_publisher_put(z_publisher_loan(&zenohPublisher), z_bytes_move(&bytes), NULL) < 0) {
+    Serial.println("Zenoh publish failed");
+  }
 }
