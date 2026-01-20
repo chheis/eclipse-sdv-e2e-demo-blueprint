@@ -9,31 +9,158 @@ int status = WL_IDLE_STATUS;  // the WiFi radio's status
 WiFiClient wifiClient;
 MqttClient mqttClient(wifiClient);
 
-const char broker[] = "broker.hivemq.com";
-int port = 1883;
-const char topic[] = "SunFounder MQTT Test";
+const char broker[] = "192.168.0.100";
+const int brokerPort = 1883;
+const char topic[] = "InVehicleTopics";
 
-//init buttons & states
-const int buttonPins[4] = { 2, 3, 4, 5 };
-bool previousButtonStates[4] = { false, false, false, false };
+const int xPin = A0;  // VRX attach
+const int swPin = 8;  // SW attach (pressed = LOW)
 
-const int xPin = A0;  //the VRX attach to
-const int yPin = A1;  //the VRY attach to
-const int swPin = 8;  //the SW attach to
+const int joystickCenter = 512;
+const int joystickDeadzone = 120;
+
+bool leftIsSignaling = false;
+bool rightIsSignaling = false;
+bool brakeIsActive = false;
 
 void setup() {
+  // set PINs for Joystick
   pinMode(swPin, INPUT_PULLUP);
   Serial.begin(115200);
   while(!Serial) { }
-  
+
+  // check for the WiFi module:
+  if (WiFi.status() == WL_NO_MODULE) {
+    Serial.println("Communication with WiFi module failed!");
+    // don't continue
+    while (true)
+      ;
+  }
+
+  String fv = WiFi.firmwareVersion();
+  if (fv < WIFI_FIRMWARE_LATEST_VERSION) {
+    Serial.println("Please upgrade the firmware");
+  }
+
+  // attempt to connect to WiFi network:
+  while (status != WL_CONNECTED) {
+    Serial.print("Attempting to connect to WPA SSID: ");
+    Serial.println(ssid);
+    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
+    status = WiFi.begin(ssid, pass);
+
+    // wait 5 seconds for connection:
+    delay(5000);
+  }
+
+  // you're connected now, so print out the data:
+  Serial.print("You're connected to the network");
+  printCurrentNet();
+  printWifiData();
+
+  Serial.print("Attempting to connect to the MQTT broker: ");
+  Serial.println(broker);
+
+  if (!mqttClient.connect(broker, brokerPort)) {
+    Serial.print("MQTT connection failed! Error code = ");
+    Serial.println(mqttClient.connectError());
+
+    while (true) {
+      delay(1000);
+    }
+  }
+
+  Serial.println("You're connected to the MQTT broker!");
+  Serial.println();
 }
 
 void loop() {
-  Serial.print("X: ");
-  Serial.print(analogRead(xPin), DEC);  // print the value of VRX in DEC
-  Serial.print("|Y: ");
-  Serial.print(analogRead(yPin), DEC);  // print the value of VRX in DEC
-  Serial.print("|Z: ");
-  Serial.println(digitalRead(swPin));  // print the value of SW
+  mqttClient.poll();
+
+  int xValue = analogRead(xPin);
+  bool swPressed = (digitalRead(swPin) == LOW);
+
+  bool newLeft = xValue < (joystickCenter - joystickDeadzone);
+  bool newRight = xValue > (joystickCenter + joystickDeadzone);
+  bool newBrake = swPressed;
+
+  if (newLeft != leftIsSignaling || newRight != rightIsSignaling || newBrake != brakeIsActive) {
+    leftIsSignaling = newLeft;
+    rightIsSignaling = newRight;
+    brakeIsActive = newBrake;
+    sendMqttUpdate(leftIsSignaling, rightIsSignaling, brakeIsActive);
+  }
+
   delay(50);
+}
+
+void printWifiData() {
+  // print your board's IP address:
+  IPAddress ip = WiFi.localIP();
+  Serial.print("IP Address: ");
+
+  Serial.println(ip);
+
+  // print your MAC address:
+  byte mac[6];
+  WiFi.macAddress(mac);
+  Serial.print("MAC address: ");
+  printMacAddress(mac);
+}
+
+void printCurrentNet() {
+  // print the SSID of the network you're attached to:
+  Serial.print("SSID: ");
+  Serial.println(WiFi.SSID());
+
+  // print the MAC address of the router you're attached to:
+  byte bssid[6];
+  WiFi.BSSID(bssid);
+  Serial.print("BSSID: ");
+  printMacAddress(bssid);
+
+  // print the received signal strength:
+  long rssi = WiFi.RSSI();
+  Serial.print("signal strength (RSSI):");
+  Serial.println(rssi);
+
+  // print the encryption type:
+  byte encryption = WiFi.encryptionType();
+  Serial.print("Encryption Type:");
+  Serial.println(encryption, HEX);
+  Serial.println();
+}
+
+void printMacAddress(byte mac[]) {
+  for (int i = 5; i >= 0; i--) {
+    if (mac[i] < 16) {
+      Serial.print("0");
+    }
+    Serial.print(mac[i], HEX);
+    if (i > 0) {
+      Serial.print(":");
+    }
+  }
+  Serial.println();
+}
+
+
+void sendMqttUpdate(bool left, bool right, bool brake) {
+  String payload = "{";
+  payload += "\"Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling\":";
+  payload += (left ? "true" : "false");
+  payload += ",";
+  payload += "\"Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling\":";
+  payload += (right ? "true" : "false");
+  payload += ",";
+  payload += "\"Vehicle.Body.Lights.Brake.IsActive\":";
+  payload += (brake ? "true" : "false");
+  payload += "}";
+
+  Serial.println("Publishing to MQTT:");
+  Serial.println(payload);
+
+  mqttClient.beginMessage(topic);
+  mqttClient.print(payload);
+  mqttClient.endMessage();
 }
