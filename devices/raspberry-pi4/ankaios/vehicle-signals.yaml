@@ -4,6 +4,12 @@ metadata:
   name: vehicle-signals
 spec:
   workloads:
+    mosquitto-broker:
+      runtime: podman
+      restartPolicy: always
+      runtimeConfig: |
+        image: eclipse-mosquitto:2.0
+        network: host
     kuksa-databroker:
       runtime: podman
       restartPolicy: always

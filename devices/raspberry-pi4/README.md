@@ -7,6 +7,7 @@ This node runs the Fleet Management Blueprint components plus the vehicle signal
 - **Ubuntu** image for Raspberry Pi 4
 - **Eclipse Ankaios 0.7.0** running workloads with Podman
 - **Eclipse Kuksa Databroker 0.6.0** workload
+- **Eclipse Mosquitto** MQTT broker workload
 - **SocketCAN** interface (e.g., `can0` at 500 kbit/s)
 - **Kuksa CAN Provider** to translate CAN → VSS
 - **Fleet Management Blueprint** services (as defined in the upstream repository)
@@ -15,9 +16,9 @@ This node runs the Fleet Management Blueprint components plus the vehicle signal
 
 Use the VSS mapping defined in [`docs/vss-can-signals.md`](../../docs/vss-can-signals.md) to wire the CAN provider to the Arduino blinker ECU.
 
-## Ankaios workload (Kuksa Databroker + CAN provider)
+## Ankaios workload (Mosquitto + Kuksa Databroker + CAN provider)
 
-Use the example Ankaios manifest in `devices/raspberry-pi4/ankaios/vehicle-signals.yaml`. It defines the Kuksa Databroker and the Kuksa CAN Provider containers as Podman workloads.
+Use the example Ankaios manifest in `devices/raspberry-pi4/ankaios/vehicle-signals.yaml`. It defines the Mosquitto MQTT broker, Kuksa Databroker, and the Kuksa CAN Provider containers as Podman workloads.
 
 1. Copy `devices/raspberry-pi4/ankaios/vehicle-signals.yaml` into your Ankaios manifests directory.
 2. Place VSS metadata at `/opt/kuksa/vss/vss.json` on the Raspberry Pi 4.
@@ -27,7 +28,7 @@ Use the example Ankaios manifest in `devices/raspberry-pi4/ankaios/vehicle-signa
 
 The template config marks all signals as TX-only so the provider only writes CAN frames (no CAN read-back). If your kuksa-can-provider version uses a different key/value for transmit-only mappings, update the `direction` field accordingly.
 
-The manifest uses host networking so the CAN provider can reach the databroker at `localhost:55555`.
+The manifest uses host networking so the CAN provider can reach the databroker at `localhost:55555`, and Mosquitto listens on `localhost:1883`. Point the Arduino broker IP to the Raspberry Pi 4 address (default in `mcu2-joystick-input.ino` is `192.168.0.100`).
 
 ## Helpful upstream references
 
