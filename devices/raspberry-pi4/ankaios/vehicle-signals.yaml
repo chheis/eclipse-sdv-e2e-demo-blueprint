@@ -10,6 +10,17 @@ spec:
       runtimeConfig: |
         image: eclipse-mosquitto:2.0
         network: host
+    grpc-mqtt-bridge:
+      runtime: podman
+      restartPolicy: always
+      runtimeConfig: |
+        image: grpc-mqtt-bridge:latest
+        network: host
+        command:
+          - "--config"
+          - "/config/grpc-mqtt.yaml"
+        volumes:
+          - /opt/grpc-mqtt:/config:ro
     kuksa-databroker:
       runtime: podman
       restartPolicy: always
