@@ -1,0 +1,18 @@
+@startuml
+title MQTT to Kuksa Databroker Workflow
+
+actor "Driver" as Driver
+participant "Joystick ECU\n(Arduino)" as ECU
+participant "Mosquitto\n(MQTT Broker)" as Broker
+participant "MQTT-to-gRPC Bridge" as Bridge
+participant "Kuksa Databroker" as Kuksa
+participant "CAN Provider" as CAN
+
+Driver -> ECU: Move joystick / press button
+ECU -> Broker: Publish JSON on InVehicleTopics
+Broker -> Bridge: Deliver MQTT message
+Bridge -> Kuksa: gRPC Val/Set updates
+Kuksa -> CAN: Target value updates
+CAN -> ECU: CAN frames to blinker ECU
+
+@enduml

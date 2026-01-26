@@ -63,6 +63,10 @@ The joystick publishes a JSON payload on `InVehicleTopics` with these VSS keys:
 
 The sample bridge config (`devices/raspberry-pi4/ankaios/grpc-mqtt.yaml`) maps each JSON key to a Kuksa `Val/Set` update so all three signals are set on every message.
 
+## Communication workflow diagram
+
+PlantUML source: `devices/raspberry-pi4/communication-workflow.puml`
+
 ## Helpful upstream references
 
 - Fleet Management Blueprint: https://github.com/eclipse-sdv-blueprints/fleet-management
