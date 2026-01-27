@@ -163,6 +163,7 @@ public class InfluxStatsService {
             + " |> filter(fn: (r) => r._measurement == \"header\" or r._measurement == \"snapshot\")"
             + " |> keep(columns: [\"vin\"])"
             + " |> distinct(column: \"vin\")"
+            + " |> group(columns: [])"
             + " |> count(column: \"vin\")";
     return querySingleLong(flux);
   }
@@ -176,8 +177,9 @@ public class InfluxStatsService {
             + " |> filter(fn: (r) => r._measurement == \""
             + measurement
             + "\")"
-            + " |> count()";
-    return querySumLong(flux);
+            + " |> group(columns: [])"
+            + " |> count(column: \"_value\")";
+    return querySingleLong(flux);
   }
 
   private long querySingleLong(String flux) {

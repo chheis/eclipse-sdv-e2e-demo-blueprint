@@ -27,6 +27,24 @@ java -jar payara-micro.jar --deploy target/fleet-analysis-backend.war --contextR
 
 The API will be available at `http://localhost:8080/fleet-analysis/api`.
 
+## Build Docker image (without Docker Compose)
+
+From the repository root:
+
+```bash
+docker build -t fleet-analysis-backend:local devices/backend-fleet-analysis-java
+```
+
+Run it manually (example):
+
+```bash
+docker run --rm -p 8082:8080 --name fleet-analysis-backend \
+  -e INFLUXDB_TOKEN_FILE=/tmp/fms-demo.token \
+  -e INFLUXDB_STATS_INTERVAL_SECONDS=30 \
+  -v /path/to/fms-demo.token:/tmp/fms-demo.token:ro \
+  fleet-analysis-backend:local
+```
+
 ## Accessing output
 
 Variant 1: Docker container logs
