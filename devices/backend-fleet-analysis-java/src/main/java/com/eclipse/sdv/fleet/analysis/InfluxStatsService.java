@@ -163,8 +163,9 @@ public class InfluxStatsService {
             + " |> filter(fn: (r) => r._measurement == \"header\" or r._measurement == \"snapshot\")"
             + " |> keep(columns: [\"vin\"])"
             + " |> distinct(column: \"vin\")"
+            + " |> rename(columns: {vin: \"_value\"})"
             + " |> group(columns: [])"
-            + " |> count(column: \"vin\")";
+            + " |> count(column: \"_value\")";
     return querySingleLong(flux);
   }
 
