@@ -1,6 +1,6 @@
 # eclipse-sdv-e2e-demo-blueprint
 
-This repository prepares a Vehicle E/E Architecture demo that combines the **Fleet Management** use case from the Eclipse SDV Blueprints project with an in‑vehicle **MotorBike Blinker** use case. The demo aligns all signal names to the COVESA Vehicle Signal Specification (VSS) and uses Kuksa Databroker 0.6.0 running as an Eclipse Ankaios 0.7.0 workload.
+This repository prepares a Vehicle E/E Architecture demo that combines the **Fleet Management** use case from the Eclipse SDV Blueprints project with an in-vehicle **MotorBike Blinker** use case. The demo aligns all signal names to the COVESA Vehicle Signal Specification (VSS) and uses Kuksa Databroker 0.6.0 running as an Eclipse Ankaios 0.7.0 workload.
 
 ## Architecture overview
 
@@ -11,9 +11,9 @@ This repository prepares a Vehicle E/E Architecture demo that combines the **Fle
   - Kuksa CAN Provider + SocketCAN
   - Fleet Management Blueprint services
 - **Raspberry Pi 5 (HCP)**
-  - Optional higher‑level control (Eclipse S‑CORE or equivalent)
+  - Optional higher-level control (Eclipse S-CORE or equivalent)
 - **MCU1 LED Control (Arduino Uno + MCP2515)**
-  - Controls 8‑LED strip for left/right indicators and brake light
+  - Controls 8-LED strip for left/right indicators and brake light
   - Publishes current light status over CAN @ 500 kbit/s
 - **Driver input ECUs**
   - Arduino + joystick (manual input)
@@ -23,11 +23,12 @@ This repository prepares a Vehicle E/E Architecture demo that combines the **Fle
 
 Each device has a dedicated folder under `devices/`:
 
-- `devices/raspberry-pi4` – connectivity unit setup notes
-- `devices/raspberry-pi5` – HCP/control node notes
-- `devices/mcu1-led-control-can` – Arduino sketch for the LED strip
-- `devices/driver-input-ecu-arduino` – driver input ECU placeholder
-- `devices/driver-input-ecu-threadx` – ThreadX input ECU placeholder
+- `devices/raspberry-pi4` - connectivity unit setup notes
+- `devices/raspberry-pi5` - HCP/control node notes
+- `devices/mcu1-led-control-can` - Arduino sketch for the LED strip
+- `devices/backend-fleet-analysis-java` - Jakarta EE 21 backend for fleet analytics
+- `devices/driver-input-ecu-arduino` - driver input ECU placeholder
+- `devices/driver-input-ecu-threadx` - ThreadX input ECU placeholder
 
 ## VSS signals used
 
@@ -38,6 +39,22 @@ The blinker demo uses the following VSS signals:
 - `Vehicle.Body.Lights.Brake.IsActive`
 
 The CAN encoding for these signals is documented in [`docs/vss-can-signals.md`](docs/vss-can-signals.md).
+
+## Quickstart (Fleet Management + Java analytics, Zenoh)
+
+1. Initialize the Fleet Management submodule:
+
+```bash
+git submodule update --init --recursive
+```
+
+2. Start the Zenoh-based Fleet Management stack plus the Java analytics backend:
+
+```bash
+docker compose -f external/fleet-management/fms-blueprint-compose.yaml -f external/fleet-management/fms-blueprint-compose-zenoh.yaml up --detach
+```
+
+The analytics service will be available at `http://127.0.0.1:8082/fleet-analysis/api`.
 
 ## References
 

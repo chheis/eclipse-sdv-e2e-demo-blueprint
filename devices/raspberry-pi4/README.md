@@ -12,6 +12,7 @@ This node runs the Fleet Management Blueprint components plus the vehicle signal
 - **SocketCAN** interface (e.g., `can0` at 500 kbit/s)
 - **Kuksa CAN Provider** to translate CAN → VSS
 - **Fleet Management Blueprint** services (as defined in the upstream repository)
+- **Fleet Analysis Backend** (Jakarta EE) container
 
 ## Raspberry Pi4 config
 - modify config.txt
@@ -77,6 +78,27 @@ The sample bridge config (`devices/raspberry-pi4/ankaios/grpc-mqtt.yaml`) maps e
 ## Communication workflow diagram
 
 PlantUML source: `devices/raspberry-pi4/communication-workflow.puml`
+
+## Fleet Analysis Backend (runs on Pi 4)
+
+The fleet analysis service runs alongside the Fleet Management Blueprint stack via Docker Compose and
+connects to the same InfluxDB instance on the `fms-backend` network.
+
+1. From `external/fleet-management`, start the stack:
+
+```bash
+docker compose -f ./fms-blueprint-compose.yaml -f ./fms-blueprint-compose-zenoh.yaml up --detach
+```
+
+2. The service will be available at `http://<pi4-ip>:8082/fleet-analysis/api`.
+
+Configuration is done via environment variables:
+
+- `INFLUXDB_STATS_INTERVAL_SECONDS` (default: 30)
+- `INFLUXDB_URI` (default: http://influxdb:8086)
+- `INFLUXDB_ORG` (default: sdv)
+- `INFLUXDB_BUCKET` (default: demo)
+- `INFLUXDB_TOKEN_FILE` (mounted from the InfluxDB init job)
 
 ## Helpful upstream references
 
