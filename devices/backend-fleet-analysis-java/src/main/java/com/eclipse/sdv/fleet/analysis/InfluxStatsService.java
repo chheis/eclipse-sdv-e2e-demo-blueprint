@@ -51,7 +51,7 @@ public class InfluxStatsService {
             });
     scheduler.scheduleAtFixedRate(
         this::refreshAndPersistStats,
-        0,
+        statsConfig.getInitialDelaySeconds(),
         statsConfig.getIntervalSeconds(),
         TimeUnit.SECONDS);
   }

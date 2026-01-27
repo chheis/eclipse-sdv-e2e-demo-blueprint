@@ -139,6 +139,8 @@ writes them into a `fleet_stats` measurement.
 
 Default schedule: every 30 seconds (configure with `INFLUXDB_STATS_INTERVAL_SECONDS` as an env var
 or Java system property).
+Initial delay before the first stats run defaults to 10 seconds (configure with
+`INFLUXDB_STATS_INITIAL_DELAY_SECONDS`).
 
 **Measurement: `fleet_stats`**
 

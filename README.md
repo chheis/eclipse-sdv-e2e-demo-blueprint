@@ -54,6 +54,11 @@ git submodule update --init --recursive
 docker compose -f external/fleet-management/fms-blueprint-compose.yaml -f external/fleet-management/fms-blueprint-compose-zenoh.yaml up --detach
 ```
 
+Maybe use this to init the network:
+````
+docker swarm init
+````
+
 The analytics service will be available at `http://127.0.0.1:8082/fleet-analysis/api`.
 
 ## References
