@@ -40,6 +40,22 @@ The blinker demo uses the following VSS signals:
 
 The CAN encoding for these signals is documented in [`docs/vss-can-signals.md`](docs/vss-can-signals.md).
 
+## Quickstart (Fleet Management + Java analytics, Zenoh)
+
+1. Initialize the Fleet Management submodule:
+
+```bash
+git submodule update --init --recursive
+```
+
+2. Start the Zenoh-based Fleet Management stack plus the Java analytics backend:
+
+```bash
+docker compose -f external/fleet-management/fms-blueprint-compose.yaml -f external/fleet-management/fms-blueprint-compose-zenoh.yaml up --detach
+```
+
+The analytics service will be available at `http://127.0.0.1:8082/fleet-analysis/api`.
+
 ## References
 
 - Fleet Management Blueprint: https://github.com/eclipse-sdv-blueprints/fleet-management
