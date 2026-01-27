@@ -1,6 +1,6 @@
-# Fleet Analysis Backend (Jakarta EE 21)
+# Fleet Analysis Backend (Jakarta EE 11)
 
-This service provides a small Jakarta EE 21 backend to analyze Fleet Management telemetry and
+This service provides a small Jakarta EE 11 backend to analyze Fleet Management telemetry and
 return summary statistics for dashboards or alerts.
 
 ## Responsibilities
