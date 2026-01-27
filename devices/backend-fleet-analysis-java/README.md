@@ -27,6 +27,20 @@ java -jar payara-micro.jar --deploy target/fleet-analysis-backend.war --contextR
 
 The API will be available at `http://localhost:8080/fleet-analysis/api`.
 
+## Accessing output
+
+Variant 1: Docker container logs
+
+```bash
+docker logs -f fleet-analysis-backend
+```
+
+Variant 2: API
+
+```bash
+curl -s http://localhost:8082/fleet-analysis/api/analysis/stats | jq
+```
+
 ## API
 
 ### `POST /api/analysis/summary`

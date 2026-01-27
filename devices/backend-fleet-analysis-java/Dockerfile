@@ -13,5 +13,9 @@ ADD https://repo1.maven.org/maven2/fish/payara/extras/payara-micro/${PAYARA_MICR
 
 COPY --from=build /workspace/target/*.war /opt/payara/fleet-analysis-backend.war
 
+ENV TMPDIR=/tmp
+
+RUN mkdir -p /tmp && chmod 1777 /tmp
+
 EXPOSE 8080
-ENTRYPOINT ["java","-jar","/opt/payara/payara-micro.jar","--deploy","/opt/payara/fleet-analysis-backend.war","--contextRoot","/fleet-analysis"]
+ENTRYPOINT ["java","-Djava.io.tmpdir=/tmp","-jar","/opt/payara/payara-micro.jar","--deploy","/opt/payara/fleet-analysis-backend.war","--contextRoot","/fleet-analysis"]
