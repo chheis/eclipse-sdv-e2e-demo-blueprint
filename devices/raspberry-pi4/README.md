@@ -4,7 +4,7 @@ This node runs the Fleet Management Blueprint components plus the vehicle signal
 
 ## Required components
 
-- **Ubuntu** image for Raspberry Pi 4
+- **Ubuntu 24.04** image for Raspberry Pi 4
 - **Eclipse Ankaios 0.7.0** running workloads with Podman
 - **Eclipse Kuksa Databroker 0.6.0** workload
 - **Eclipse Mosquitto** MQTT broker workload
@@ -12,6 +12,17 @@ This node runs the Fleet Management Blueprint components plus the vehicle signal
 - **SocketCAN** interface (e.g., `can0` at 500 kbit/s)
 - **Kuksa CAN Provider** to translate CAN → VSS
 - **Fleet Management Blueprint** services (as defined in the upstream repository)
+
+## Raspberry Pi4 config
+- modify config.txt
+- For the single CAN Hat add:
+````
+dtoverlay=mcp2515-can0,oscillator=12000000,interrupt=25,spimaxfrequency=2000000
+````
+for the SPI 7" display remove or comment out
+````
+dtoverlay=vc4-kms-v3d
+````
 
 ## Signal mapping
 

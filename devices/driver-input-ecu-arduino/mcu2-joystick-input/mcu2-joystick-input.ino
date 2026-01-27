@@ -14,6 +14,7 @@ const int brokerPort = 1883;
 const char topic[] = "InVehicleTopics";
 
 const int xPin = A0;  // VRX attach
+const int yPin = A1;  // VRY attach
 const int swPin = 8;  // SW attach (pressed = LOW)
 
 const int joystickCenter = 512;
@@ -67,6 +68,7 @@ void setup() {
 
     while (true) {
       delay(1000);
+      Serial.print("MQTT connection failed! Error code = ");
     }
   }
 
@@ -78,16 +80,31 @@ void loop() {
   mqttClient.poll();
 
   int xValue = analogRead(xPin);
+  int yValue = analogRead(yPin);
   bool swPressed = (digitalRead(swPin) == LOW);
 
-  bool newLeft = xValue < (joystickCenter - joystickDeadzone);
-  bool newRight = xValue > (joystickCenter + joystickDeadzone);
-  bool newBrake = swPressed;
+  bool wantLeft = xValue < (joystickCenter - joystickDeadzone);
+  bool wantRight = xValue > (joystickCenter + joystickDeadzone);
+  bool wantBrake = yValue > (joystickCenter + joystickDeadzone);
 
-  if (newLeft != leftIsSignaling || newRight != rightIsSignaling || newBrake != brakeIsActive) {
-    leftIsSignaling = newLeft;
-    rightIsSignaling = newRight;
-    brakeIsActive = newBrake;
+  bool nextLeft = leftIsSignaling;
+  bool nextRight = rightIsSignaling;
+
+  if (swPressed) {
+    nextLeft = false;
+    nextRight = false;
+  } else if (wantLeft && !wantRight) {
+    nextLeft = true;
+    nextRight = false;
+  } else if (wantRight && !wantLeft) {
+    nextLeft = false;
+    nextRight = true;
+  }
+
+  if (nextLeft != leftIsSignaling || nextRight != rightIsSignaling || wantBrake != brakeIsActive) {
+    leftIsSignaling = nextLeft;
+    rightIsSignaling = nextRight;
+    brakeIsActive = wantBrake;
     sendMqttUpdate(leftIsSignaling, rightIsSignaling, brakeIsActive);
   }
 
