@@ -156,17 +156,12 @@ public class InfluxStatsService {
 
   private long queryVehicleCount() {
     String flux =
-        "from(bucket: \""
+        "import \"influxdata/influxdb/schema\"\n"
+            + "schema.tagValues(bucket: \""
             + influxConfig.getBucket()
-            + "\")"
-            + " |> range(start: 0)"
-            + " |> filter(fn: (r) => r._measurement == \"header\" or r._measurement == \"snapshot\")"
-            + " |> keep(columns: [\"vin\"])"
-            + " |> distinct(column: \"vin\")"
-            + " |> map(fn: (r) => ({_value: 1}))"
-            + " |> keep(columns: [\"_value\"])"
+            + "\", tag: \"vin\")"
             + " |> group(columns: [])"
-            + " |> sum(column: \"_value\")";
+            + " |> count(column: \"_value\")";
     return querySingleLong(flux);
   }
 
@@ -179,10 +174,11 @@ public class InfluxStatsService {
             + " |> filter(fn: (r) => r._measurement == \""
             + measurement
             + "\")"
-            + " |> map(fn: (r) => ({_value: 1}))"
-            + " |> keep(columns: [\"_value\"])"
+            + " |> keep(columns: [\"_time\", \"vin\"])"
+            + " |> map(fn: (r) => ({_value: string(v: r._time) + \":\" + r.vin}))"
+            + " |> distinct(column: \"_value\")"
             + " |> group(columns: [])"
-            + " |> sum(column: \"_value\")";
+            + " |> count(column: \"_value\")";
     return querySingleLong(flux);
   }
 
