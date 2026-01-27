@@ -163,9 +163,9 @@ public class InfluxStatsService {
             + " |> filter(fn: (r) => r._measurement == \"header\" or r._measurement == \"snapshot\")"
             + " |> keep(columns: [\"vin\"])"
             + " |> distinct(column: \"vin\")"
-            + " |> map(fn: (r) => ({ r with _value: 1 }))"
             + " |> group(columns: [])"
-            + " |> sum(column: \"_value\")";
+            + " |> reduce(fn: (r, acc) => ({count: acc.count + 1}), identity: {count: 0})"
+            + " |> keep(columns: [\"count\"])";
     return querySingleLong(flux);
   }
 
@@ -178,9 +178,9 @@ public class InfluxStatsService {
             + " |> filter(fn: (r) => r._measurement == \""
             + measurement
             + "\")"
-            + " |> map(fn: (r) => ({ r with _value: 1 }))"
             + " |> group(columns: [])"
-            + " |> sum(column: \"_value\")";
+            + " |> reduce(fn: (r, acc) => ({count: acc.count + 1}), identity: {count: 0})"
+            + " |> keep(columns: [\"count\"])";
     return querySingleLong(flux);
   }
 
@@ -193,6 +193,9 @@ public class InfluxStatsService {
     for (FluxTable table : tables) {
       for (FluxRecord record : table.getRecords()) {
         Object value = record.getValue();
+        if (value == null) {
+          value = record.getValueByKey("count");
+        }
         if (value != null) {
           return toLong(value);
         }
