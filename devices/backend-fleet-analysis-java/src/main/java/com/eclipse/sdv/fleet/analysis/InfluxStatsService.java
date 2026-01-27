@@ -164,7 +164,7 @@ public class InfluxStatsService {
             + " |> keep(columns: [\"vin\"])"
             + " |> distinct(column: \"vin\")"
             + " |> group(columns: [])"
-            + " |> reduce(fn: (r, acc) => ({count: acc.count + 1}), identity: {count: 0})"
+            + " |> reduce(fn: (r, accumulator) => ({count: accumulator.count + 1}), identity: {count: 0})"
             + " |> keep(columns: [\"count\"])";
     return querySingleLong(flux);
   }
@@ -179,7 +179,7 @@ public class InfluxStatsService {
             + measurement
             + "\")"
             + " |> group(columns: [])"
-            + " |> reduce(fn: (r, acc) => ({count: acc.count + 1}), identity: {count: 0})"
+            + " |> reduce(fn: (r, accumulator) => ({count: accumulator.count + 1}), identity: {count: 0})"
             + " |> keep(columns: [\"count\"])";
     return querySingleLong(flux);
   }
