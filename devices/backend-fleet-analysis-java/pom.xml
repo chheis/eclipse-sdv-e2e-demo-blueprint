@@ -20,5 +20,10 @@
       <version>10.0.0</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>com.influxdb</groupId>
+      <artifactId>influxdb-client-java</artifactId>
+      <version>7.0.0</version>
+    </dependency>
   </dependencies>
 </project>
