@@ -163,9 +163,10 @@ public class InfluxStatsService {
             + " |> filter(fn: (r) => r._measurement == \"header\" or r._measurement == \"snapshot\")"
             + " |> keep(columns: [\"vin\"])"
             + " |> distinct(column: \"vin\")"
+            + " |> map(fn: (r) => ({_value: 1}))"
+            + " |> keep(columns: [\"_value\"])"
             + " |> group(columns: [])"
-            + " |> reduce(fn: (r, accumulator) => ({count: accumulator.count + 1}), identity: {count: 0})"
-            + " |> keep(columns: [\"count\"])";
+            + " |> sum(column: \"_value\")";
     return querySingleLong(flux);
   }
 
@@ -178,9 +179,10 @@ public class InfluxStatsService {
             + " |> filter(fn: (r) => r._measurement == \""
             + measurement
             + "\")"
+            + " |> map(fn: (r) => ({_value: 1}))"
+            + " |> keep(columns: [\"_value\"])"
             + " |> group(columns: [])"
-            + " |> reduce(fn: (r, accumulator) => ({count: accumulator.count + 1}), identity: {count: 0})"
-            + " |> keep(columns: [\"count\"])";
+            + " |> sum(column: \"_value\")";
     return querySingleLong(flux);
   }
 
