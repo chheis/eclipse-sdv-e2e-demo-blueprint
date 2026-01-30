@@ -1,47 +1,37 @@
-apiVersion: v1
-kind: Manifest
-metadata:
-  name: vehicle-signals
-spec:
-  workloads:
-    mosquitto-broker:
-      runtime: podman
-      restartPolicy: always
-      runtimeConfig: |
-        image: eclipse-mosquitto:2.0
-        network: host
-    grpc-mqtt-bridge:
-      runtime: podman
-      restartPolicy: always
-      runtimeConfig: |
-        image: grpc-mqtt-bridge:latest
-        network: host
-        command:
-          - "--config"
-          - "/config/grpc-mqtt.yaml"
-        volumes:
-          - /opt/grpc-mqtt:/config:ro
-    kuksa-databroker:
-      runtime: podman
-      restartPolicy: always
-      runtimeConfig: |
-        image: ghcr.io/eclipse-kuksa/kuksa-databroker:0.6.0
-        network: host
-        command:
-          - "--insecure"
-          - "--metadata"
-          - "/data/vss.json"
-        volumes:
-          - /opt/kuksa/vss:/data:ro
-    kuksa-can-provider:
-      runtime: podman
-      restartPolicy: always
-      runtimeConfig: |
-        image: ghcr.io/eclipse-kuksa/kuksa-can-provider:0.3.0
-        network: host
-        privileged: true
-        command:
-          - "--config"
-          - "/config/can-provider-config.json"
-        volumes:
-          - /opt/kuksa/can-provider:/config:ro
+apiVersion: v0.1
+workloads:
+  mosquitto-broker:
+    runtime: podman
+    agent: agent_B
+    restartPolicy: ALWAYS
+    configs:
+      mosquitto_conf: mosquitto_config
+    files:
+      - mountPoint: "/mosquitto/config/mosquitto.conf" # mount point in the container
+        data: "{{mosquitto_conf}}" 
+    runtimeConfig: |
+      image: docker.io/eclipse-mosquitto:latest
+      commandOptions: ["--net=host"]
+  kuksa-databroker:
+    runtime: podman
+    agent: agent_B
+    restartPolicy: ALWAYS
+    runtimeConfig: |
+      image: ghcr.io/eclipse-kuksa/kuksa-databroker:0.6.0
+      commandArgs: ["--insecure"]
+      commandOptions: ["--net=host"]
+      volumes:
+        - /opt/kuksa/vss:/data:ro
+  kuksa-can-provider:
+    runtime: podman
+    agent: agent_B
+    restartPolicy: ALWAYS
+    runtimeConfig: |
+      image: ghcr.io/eclipse-kuksa/kuksa-can-provider:0.3.0
+      network: host
+      privileged: true
+      commandOptions: [ "--config", "/config/can-provider-config.json"]
+configs:
+  mosquitto_config: |
+    listener 1883 0.0.0.0
+    allow_anonymous true
