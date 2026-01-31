@@ -9,9 +9,12 @@ int status = WL_IDLE_STATUS;  // the WiFi radio's status
 WiFiClient wifiClient;
 MqttClient mqttClient(wifiClient);
 
-const char broker[] = "192.168.0.100";
+const char broker[] = "192.168.88.100";
 const int brokerPort = 1883;
 const char topic[] = "InVehicleTopics";
+
+const unsigned long WIFI_RETRY_INTERVAL_MS = 5000;
+const unsigned long MQTT_RETRY_INTERVAL_MS = 3000;
 
 const int xPin = A0;  // VRX attach
 const int yPin = A1;  // VRY attach
@@ -23,6 +26,13 @@ const int joystickDeadzone = 120;
 bool leftIsSignaling = false;
 bool rightIsSignaling = false;
 bool brakeIsActive = false;
+bool updatePending = false;
+
+unsigned long lastWifiAttemptMs = 0;
+unsigned long lastMqttAttemptMs = 0;
+
+void ensureWifiConnected();
+void ensureMqttConnected();
 
 void setup() {
   // set PINs for Joystick
@@ -43,41 +53,23 @@ void setup() {
     Serial.println("Please upgrade the firmware");
   }
 
-  // attempt to connect to WiFi network:
-  while (status != WL_CONNECTED) {
-    Serial.print("Attempting to connect to WPA SSID: ");
-    Serial.println(ssid);
-    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
-    status = WiFi.begin(ssid, pass);
-
-    // wait 5 seconds for connection:
-    delay(5000);
+  ensureWifiConnected();
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.print("You're connected to the network");
+    printCurrentNet();
+    printWifiData();
   }
 
-  // you're connected now, so print out the data:
-  Serial.print("You're connected to the network");
-  printCurrentNet();
-  printWifiData();
-
-  Serial.print("Attempting to connect to the MQTT broker: ");
-  Serial.println(broker);
-
-  if (!mqttClient.connect(broker, brokerPort)) {
-    Serial.print("MQTT connection failed! Error code = ");
-    Serial.println(mqttClient.connectError());
-
-    while (true) {
-      delay(1000);
-      Serial.print("MQTT connection failed! Error code = ");
-    }
-  }
-
-  Serial.println("You're connected to the MQTT broker!");
-  Serial.println();
+  ensureMqttConnected();
 }
 
 void loop() {
-  mqttClient.poll();
+  ensureWifiConnected();
+  ensureMqttConnected();
+
+  if (WiFi.status() == WL_CONNECTED && mqttClient.connected()) {
+    mqttClient.poll();
+  }
 
   int xValue = analogRead(xPin);
   int yValue = analogRead(yPin);
@@ -105,10 +97,15 @@ void loop() {
     leftIsSignaling = nextLeft;
     rightIsSignaling = nextRight;
     brakeIsActive = wantBrake;
-    sendMqttUpdate(leftIsSignaling, rightIsSignaling, brakeIsActive);
+    updatePending = true;
   }
 
-  delay(50);
+  if (updatePending && WiFi.status() == WL_CONNECTED && mqttClient.connected()) {
+    sendMqttUpdate(leftIsSignaling, rightIsSignaling, brakeIsActive);
+    updatePending = false;
+  }
+
+  delay(10);
 }
 
 void printWifiData() {
@@ -180,4 +177,49 @@ void sendMqttUpdate(bool left, bool right, bool brake) {
   mqttClient.beginMessage(topic);
   mqttClient.print(payload);
   mqttClient.endMessage();
+}
+
+void ensureWifiConnected() {
+  if (WiFi.status() == WL_CONNECTED) {
+    return;
+  }
+
+  unsigned long now = millis();
+  if (now - lastWifiAttemptMs < WIFI_RETRY_INTERVAL_MS) {
+    return;
+  }
+
+  lastWifiAttemptMs = now;
+  Serial.print("Attempting to connect to WPA SSID: ");
+  Serial.println(ssid);
+  status = WiFi.begin(ssid, pass);
+}
+
+void ensureMqttConnected() {
+  if (WiFi.status() != WL_CONNECTED) {
+    return;
+  }
+
+  if (mqttClient.connected()) {
+    return;
+  }
+
+  unsigned long now = millis();
+  if (now - lastMqttAttemptMs < MQTT_RETRY_INTERVAL_MS) {
+    return;
+  }
+
+  lastMqttAttemptMs = now;
+  Serial.print("Attempting to connect to the MQTT broker: ");
+  Serial.println(broker);
+
+  if (!mqttClient.connect(broker, brokerPort)) {
+    Serial.print("MQTT connection failed! Error code = ");
+    Serial.println(mqttClient.connectError());
+    return;
+  }
+
+  Serial.println("You're connected to the MQTT broker!");
+  Serial.println();
+  updatePending = true;
 }
