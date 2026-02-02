@@ -120,7 +120,7 @@ class KuksaWriter:
     @staticmethod
     def _coerce_datapoint_value(value):
         if isinstance(value, bool):
-            return "true" if value else "false"
+            return "Datapoint(True)" if value else "Datapoint(False)"
         return value
 
 
