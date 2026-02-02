@@ -27,10 +27,12 @@ workloads:
     agent: agent_B
     restartPolicy: ALWAYS
     runtimeConfig: |
-      image: ghcr.io/eclipse-kuksa/kuksa-can-provider:0.3.0
+      image: ghcr.io/eclipse-kuksa/kuksa-can-provider/can-provider:0.4.4
       network: host
       privileged: true
-      commandOptions: [ "--config", "/config/can-provider-config.json"]
+      commandArgs: ["--config", "/config/can-provider-config.json"]
+      volumes:
+        - /opt/kuksa/can-provider:/config:ro
 configs:
   mosquitto_config: |
     listener 1883 0.0.0.0

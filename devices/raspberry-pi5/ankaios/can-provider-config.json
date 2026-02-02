@@ -1,6 +1,15 @@
 {
+  "general": {
+    "server_type": "kuksa_databroker",
+    "ip": "127.0.0.1",
+    "port": 55555,
+    "tls": false
+  },
   "can": {
-    "interface": "can0",
+    "port": "can0",
+    "j1939": false,
+    "dbc2val": false,
+    "val2dbc": true,
     "useFd": false
   },
   "signals": [
