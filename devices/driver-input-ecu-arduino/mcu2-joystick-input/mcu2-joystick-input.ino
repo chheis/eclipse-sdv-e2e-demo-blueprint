@@ -168,7 +168,7 @@ void sendMqttUpdate(bool left, bool right, bool brake) {
   payload += (right ? "true" : "false");
   payload += ",";
   payload += "\"Vehicle.Body.Lights.Brake.IsActive\":";
-  payload += (brake ? "true" : "false");
+  payload += (brake ? "\"ACTIVE\"" : "\"INACTIVE\"");
   payload += "}";
 
   Serial.println("Publishing to MQTT:");

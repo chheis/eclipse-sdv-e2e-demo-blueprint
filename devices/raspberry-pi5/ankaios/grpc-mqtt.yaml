@@ -22,5 +22,5 @@ mappings:
           type: "bool"
           jsonPointer: "/Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling"
         - path: "Vehicle.Body.Lights.Brake.IsActive"
-          type: "bool"
+          type: "string"
           jsonPointer: "/Vehicle.Body.Lights.Brake.IsActive"
