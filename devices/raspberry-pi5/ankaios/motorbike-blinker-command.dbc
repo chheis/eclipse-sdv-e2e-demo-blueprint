@@ -34,10 +34,15 @@ BS_:
 
 BU_: RPI4 MCU1
 
+BA_DEF_ BO_ "VFrameFormat" ENUM "Standard","Extended";
+BA_DEF_DEF_ "VFrameFormat" "Standard";
+
 BO_ 288 BlinkerCommand: 1 RPI4
  SG_ DirectionIndicatorLeft : 0|1@1+ (1,0) [0|1] "" MCU1
  SG_ DirectionIndicatorRight : 1|1@1+ (1,0) [0|1] "" MCU1
  SG_ BrakeIsActive : 2|1@1+ (1,0) [0|1] "" MCU1
+
+BA_ "VFrameFormat" BO_ 288 0;
 
 CM_ BO_ 288 "VSS command frame for Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling, Right.IsSignaling, and Brake.IsActive.";
 CM_ SG_ 288 DirectionIndicatorLeft "Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling";
