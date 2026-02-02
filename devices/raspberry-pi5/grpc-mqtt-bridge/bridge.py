@@ -73,15 +73,22 @@ def _cast_value(value, value_type):
 class KuksaWriter:
     def __init__(self, host, port):
         self._datapoint_class = None
+        self._data_type_enum = None
+        self._metadata_field_enum = None
+        self._value_types = {}
+        self._value_restrictions = {}
+        self._logged_metadata_paths = set()
         self._client = self._build_client(host, port)
         self._connect()
         self._set_values = self._select_setter()
 
     def _build_client(self, host, port):
         try:
-            from kuksa_client.grpc import Datapoint, VSSClient
+            from kuksa_client.grpc import Datapoint, DataType, MetadataField, VSSClient
 
             self._datapoint_class = Datapoint
+            self._data_type_enum = DataType
+            self._metadata_field_enum = MetadataField
             return VSSClient(host, port)
         except ImportError:
             from kuksa_client import KuksaClient
@@ -107,21 +114,174 @@ class KuksaWriter:
     def _normalize_updates(self, updates):
         if self._datapoint_class is None:
             return updates
+        self._refresh_metadata(updates.keys())
         normalized = {}
         for path, value in updates.items():
             if hasattr(value, "v1_to_message"):
                 normalized[path] = value
             else:
                 normalized[path] = self._datapoint_class(
-                    value=self._coerce_datapoint_value(value)
+                    value=self._coerce_datapoint_value(
+                        value,
+                        self._value_types.get(path),
+                        self._value_restrictions.get(path),
+                    )
                 )
         return normalized
 
-    @staticmethod
-    def _coerce_datapoint_value(value):
-        if isinstance(value, bool):
-            return "Datapoint(True)" if value else "Datapoint(False)"
+    def _refresh_metadata(self, paths):
+        if self._data_type_enum is None:
+            return
+        if hasattr(self._client, "get_value_types"):
+            missing_types = [path for path in paths if path not in self._value_types]
+            if missing_types:
+                try:
+                    resolved = self._client.get_value_types(missing_types)
+                except Exception:
+                    resolved = {}
+                self._value_types.update(resolved or {})
+
+        if (
+            self._metadata_field_enum is None
+            or not hasattr(self._client, "get_metadata")
+        ):
+            self._log_metadata(paths)
+            return
+
+        missing_restrictions = [
+            path for path in paths if path not in self._value_restrictions
+        ]
+        if missing_restrictions:
+            try:
+                metadata = self._client.get_metadata(
+                    missing_restrictions,
+                    self._metadata_field_enum.VALUE_RESTRICTION,
+                )
+            except Exception:
+                metadata = {}
+            for path, md in (metadata or {}).items():
+                self._value_restrictions[path] = (
+                    md.value_restriction if md is not None else None
+                )
+        self._log_metadata(paths)
+
+    def _log_metadata(self, paths):
+        if not paths:
+            return
+        pending = [path for path in paths if path not in self._logged_metadata_paths]
+        if not pending:
+            return
+        for path in pending:
+            value_type = self._value_types.get(path)
+            restriction = self._value_restrictions.get(path)
+            restriction_desc = None
+            if restriction is not None:
+                restriction_desc = {
+                    "min": restriction.min,
+                    "max": restriction.max,
+                    "allowed_values": restriction.allowed_values,
+                }
+            print(
+                f"Kuksa metadata: {path} type={value_type} restriction={restriction_desc}",
+                file=sys.stderr,
+            )
+        self._logged_metadata_paths.update(pending)
+
+    def _coerce_datapoint_value(self, value, value_type, restriction):
+        if value is None:
+            return None
+        if value_type is None or self._data_type_enum is None:
+            return value
+        data_type = value_type
+        if data_type in (self._data_type_enum.STRING,):
+            return self._coerce_string(value, restriction)
+        if data_type in (self._data_type_enum.BOOLEAN,):
+            return self._coerce_bool(value)
+        if data_type in (
+            self._data_type_enum.INT8,
+            self._data_type_enum.INT16,
+            self._data_type_enum.INT32,
+            self._data_type_enum.INT64,
+            self._data_type_enum.UINT8,
+            self._data_type_enum.UINT16,
+            self._data_type_enum.UINT32,
+            self._data_type_enum.UINT64,
+        ):
+            return self._coerce_int(value)
+        if data_type in (self._data_type_enum.FLOAT, self._data_type_enum.DOUBLE):
+            return self._coerce_float(value)
+        if data_type in (self._data_type_enum.STRING_ARRAY,):
+            return self._coerce_array(
+                value, lambda item: self._coerce_string(item, restriction)
+            )
+        if data_type in (self._data_type_enum.BOOLEAN_ARRAY,):
+            return self._coerce_array(value, self._coerce_bool)
+        if data_type in (
+            self._data_type_enum.INT8_ARRAY,
+            self._data_type_enum.INT16_ARRAY,
+            self._data_type_enum.INT32_ARRAY,
+            self._data_type_enum.INT64_ARRAY,
+            self._data_type_enum.UINT8_ARRAY,
+            self._data_type_enum.UINT16_ARRAY,
+            self._data_type_enum.UINT32_ARRAY,
+            self._data_type_enum.UINT64_ARRAY,
+        ):
+            return self._coerce_array(value, self._coerce_int)
+        if data_type in (
+            self._data_type_enum.FLOAT_ARRAY,
+            self._data_type_enum.DOUBLE_ARRAY,
+        ):
+            return self._coerce_array(value, self._coerce_float)
         return value
+
+    @staticmethod
+    def _coerce_bool(value):
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in ("true", "1", "yes", "on"):
+                return True
+            if normalized in ("false", "0", "no", "off"):
+                return False
+        return bool(value)
+
+    @staticmethod
+    def _coerce_int(value):
+        return int(value)
+
+    @staticmethod
+    def _coerce_float(value):
+        return float(value)
+
+    def _coerce_string(self, value, restriction):
+        if isinstance(value, bool):
+            return self._bool_string_from_restriction(value, restriction)
+        return str(value)
+
+    @staticmethod
+    def _coerce_array(value, caster):
+        if isinstance(value, (list, tuple)):
+            return [caster(item) for item in value]
+        return [caster(value)]
+
+    @staticmethod
+    def _bool_string_from_restriction(value, restriction):
+        if restriction and restriction.allowed_values:
+            allowed = [str(v).strip().lower() for v in restriction.allowed_values]
+            if "true" in allowed and "false" in allowed:
+                return "true" if value else "false"
+            if "1" in allowed and "0" in allowed:
+                return "1" if value else "0"
+            if "on" in allowed and "off" in allowed:
+                return "on" if value else "off"
+            if "yes" in allowed and "no" in allowed:
+                return "yes" if value else "no"
+            if len(restriction.allowed_values) == 2:
+                return (
+                    str(restriction.allowed_values[1])
+                    if value
+                    else str(restriction.allowed_values[0])
+                )
+        return "true" if value else "false"
 
 
 def main():
