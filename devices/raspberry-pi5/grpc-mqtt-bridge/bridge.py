@@ -75,20 +75,31 @@ class KuksaWriter:
         self._datapoint_class = None
         self._data_type_enum = None
         self._metadata_field_enum = None
+        self._entry_type_enum = None
         self._value_types = {}
         self._value_restrictions = {}
+        self._entry_types = {}
         self._logged_metadata_paths = set()
+        self._set_current_values = None
+        self._set_target_values = None
         self._client = self._build_client(host, port)
         self._connect()
-        self._set_values = self._select_setter()
+        self._select_setters()
 
     def _build_client(self, host, port):
         try:
-            from kuksa_client.grpc import Datapoint, DataType, MetadataField, VSSClient
+            from kuksa_client.grpc import (
+                Datapoint,
+                DataType,
+                EntryType,
+                MetadataField,
+                VSSClient,
+            )
 
             self._datapoint_class = Datapoint
             self._data_type_enum = DataType
             self._metadata_field_enum = MetadataField
+            self._entry_type_enum = EntryType
             return VSSClient(host, port)
         except ImportError:
             from kuksa_client import KuksaClient
@@ -99,17 +110,38 @@ class KuksaWriter:
         if hasattr(self._client, "connect"):
             self._client.connect()
 
-    def _select_setter(self):
+    def _select_setters(self):
         if hasattr(self._client, "set_target_values"):
-            return self._client.set_target_values
+            self._set_target_values = self._client.set_target_values
         if hasattr(self._client, "set_current_values"):
-            return self._client.set_current_values
-        raise RuntimeError("Kuksa client has no supported set_* method")
+            self._set_current_values = self._client.set_current_values
+        if self._set_target_values is None and self._set_current_values is None:
+            raise RuntimeError("Kuksa client has no supported set_* method")
 
     def write(self, updates):
         if not updates:
             return
-        self._set_values(self._normalize_updates(updates))
+        normalized = self._normalize_updates(updates)
+        if self._set_target_values and self._set_current_values:
+            target_updates = {}
+            current_updates = {}
+            for path, value in normalized.items():
+                entry_type = self._entry_types.get(path)
+                if self._entry_type_enum is not None and entry_type is not None:
+                    if entry_type == self._entry_type_enum.ACTUATOR:
+                        target_updates[path] = value
+                    else:
+                        current_updates[path] = value
+                else:
+                    target_updates[path] = value
+            if current_updates:
+                self._set_current_values(current_updates)
+            if target_updates:
+                self._set_target_values(target_updates)
+        elif self._set_target_values:
+            self._set_target_values(normalized)
+        else:
+            self._set_current_values(normalized)
 
     def _normalize_updates(self, updates):
         if self._datapoint_class is None:
@@ -132,8 +164,42 @@ class KuksaWriter:
     def _refresh_metadata(self, paths):
         if self._data_type_enum is None:
             return
+        if (
+            self._metadata_field_enum is not None
+            and hasattr(self._client, "get_metadata")
+        ):
+            missing_metadata = [
+                path
+                for path in paths
+                if path not in self._entry_types
+                or path not in self._value_types
+                or path not in self._value_restrictions
+            ]
+            if missing_metadata:
+                try:
+                    metadata = self._client.get_metadata(
+                        missing_metadata,
+                        self._metadata_field_enum.ALL,
+                    )
+                except Exception:
+                    metadata = {}
+                for path, md in (metadata or {}).items():
+                    self._entry_types[path] = md.entry_type if md is not None else None
+                    self._value_types[path] = md.data_type if md is not None else None
+                    self._value_restrictions[path] = (
+                        md.value_restriction if md is not None else None
+                    )
+                for path in missing_metadata:
+                    if path not in metadata:
+                        self._entry_types.setdefault(path, None)
+                        self._value_restrictions.setdefault(path, None)
+
         if hasattr(self._client, "get_value_types"):
-            missing_types = [path for path in paths if path not in self._value_types]
+            missing_types = [
+                path
+                for path in paths
+                if path not in self._value_types or self._value_types[path] is None
+            ]
             if missing_types:
                 try:
                     resolved = self._client.get_value_types(missing_types)
@@ -141,28 +207,6 @@ class KuksaWriter:
                     resolved = {}
                 self._value_types.update(resolved or {})
 
-        if (
-            self._metadata_field_enum is None
-            or not hasattr(self._client, "get_metadata")
-        ):
-            self._log_metadata(paths)
-            return
-
-        missing_restrictions = [
-            path for path in paths if path not in self._value_restrictions
-        ]
-        if missing_restrictions:
-            try:
-                metadata = self._client.get_metadata(
-                    missing_restrictions,
-                    self._metadata_field_enum.VALUE_RESTRICTION,
-                )
-            except Exception:
-                metadata = {}
-            for path, md in (metadata or {}).items():
-                self._value_restrictions[path] = (
-                    md.value_restriction if md is not None else None
-                )
         self._log_metadata(paths)
 
     def _log_metadata(self, paths):
@@ -174,6 +218,7 @@ class KuksaWriter:
         for path in pending:
             value_type = self._value_types.get(path)
             restriction = self._value_restrictions.get(path)
+            entry_type = self._entry_types.get(path)
             restriction_desc = None
             if restriction is not None:
                 restriction_desc = {
@@ -182,7 +227,7 @@ class KuksaWriter:
                     "allowed_values": restriction.allowed_values,
                 }
             print(
-                f"Kuksa metadata: {path} type={value_type} restriction={restriction_desc}",
+                f"Kuksa metadata: {path} type={value_type} entry_type={entry_type} restriction={restriction_desc}",
                 file=sys.stderr,
             )
         self._logged_metadata_paths.update(pending)
