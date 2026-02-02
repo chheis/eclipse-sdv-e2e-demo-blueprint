@@ -112,8 +112,16 @@ class KuksaWriter:
             if hasattr(value, "v1_to_message"):
                 normalized[path] = value
             else:
-                normalized[path] = self._datapoint_class(value=value)
+                normalized[path] = self._datapoint_class(
+                    value=self._coerce_datapoint_value(value)
+                )
         return normalized
+
+    @staticmethod
+    def _coerce_datapoint_value(value):
+        if isinstance(value, bool):
+            return "true" if value else "false"
+        return value
 
 
 def main():
