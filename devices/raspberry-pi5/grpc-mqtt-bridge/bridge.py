@@ -49,16 +49,39 @@ def _json_pointer(value, pointer):
     return current
 
 
+def _cast_value(value, value_type):
+    if not value_type:
+        return value
+    value_type = value_type.lower()
+    if value_type == "bool":
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in ("true", "1", "yes", "on"):
+                return True
+            if normalized in ("false", "0", "no", "off"):
+                return False
+        return bool(value)
+    if value_type == "int":
+        return int(value)
+    if value_type == "float":
+        return float(value)
+    if value_type == "string":
+        return str(value)
+    return value
+
+
 class KuksaWriter:
     def __init__(self, host, port):
+        self._datapoint_class = None
         self._client = self._build_client(host, port)
         self._connect()
         self._set_values = self._select_setter()
 
     def _build_client(self, host, port):
         try:
-            from kuksa_client.grpc import VSSClient
+            from kuksa_client.grpc import Datapoint, VSSClient
 
+            self._datapoint_class = Datapoint
             return VSSClient(host, port)
         except ImportError:
             from kuksa_client import KuksaClient
@@ -79,7 +102,18 @@ class KuksaWriter:
     def write(self, updates):
         if not updates:
             return
-        self._set_values(updates)
+        self._set_values(self._normalize_updates(updates))
+
+    def _normalize_updates(self, updates):
+        if self._datapoint_class is None:
+            return updates
+        normalized = {}
+        for path, value in updates.items():
+            if hasattr(value, "v1_to_message"):
+                normalized[path] = value
+            else:
+                normalized[path] = self._datapoint_class(value=value)
+        return normalized
 
 
 def main():
@@ -132,8 +166,10 @@ def main():
                     value = _json_pointer(scoped_payload, pointer)
                 except (KeyError, ValueError, IndexError):
                     continue
-                if update.get("type") == "bool":
-                    value = bool(value)
+                try:
+                    value = _cast_value(value, update.get("type"))
+                except (TypeError, ValueError):
+                    continue
                 updates[update.get("path")] = value
 
         try:
