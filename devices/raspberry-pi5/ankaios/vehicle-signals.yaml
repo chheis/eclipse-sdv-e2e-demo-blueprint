@@ -29,65 +29,27 @@ workloads:
     configs:
       can_provider_config: can_provider_config
     files:
-      - mountPoint: "/config/can-provider-config.json"
+      - mountPoint: "/config/can-provider-config.ini"
         data: "{{can_provider_config}}"
     runtimeConfig: |
       image: ghcr.io/eclipse-kuksa/kuksa-can-provider/can-provider:0.4.4
       network: host
       privileged: true
-      commandArgs: ["--config", "/config/can-provider-config.json"]
+      commandArgs: ["--config", "/config/can-provider-config.ini"]
 configs:
   mosquitto_config: |
     listener 1883 0.0.0.0
     allow_anonymous true
   can_provider_config: |
-    {
-      "general": {
-        "server_type": "kuksa_databroker",
-        "ip": "127.0.0.1",
-        "port": 55555,
-        "tls": false
-      },
-      "can": {
-        "port": "can0",
-        "j1939": false,
-        "dbc2val": false,
-        "val2dbc": true,
-        "useFd": false
-      },
-      "signals": [
-        {
-          "vssPath": "Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling",
-          "canId": "0x120",
-          "byteIndex": 0,
-          "bitIndex": 0,
-          "length": 1,
-          "factor": 1,
-          "offset": 0,
-          "isSigned": false,
-          "direction": "tx"
-        },
-        {
-          "vssPath": "Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling",
-          "canId": "0x120",
-          "byteIndex": 0,
-          "bitIndex": 1,
-          "length": 1,
-          "factor": 1,
-          "offset": 0,
-          "isSigned": false,
-          "direction": "tx"
-        },
-        {
-          "vssPath": "Vehicle.Body.Lights.Brake.IsActive",
-          "canId": "0x120",
-          "byteIndex": 0,
-          "bitIndex": 2,
-          "length": 1,
-          "factor": 1,
-          "offset": 0,
-          "isSigned": false,
-          "direction": "tx"
-        }
-      ]
-    }
+    [general]
+    server_type = kuksa_databroker
+    ip = 127.0.0.1
+    port = 55555
+    tls = False
+    mapping = mapping/vss_4.0/vss_dbc.json
+
+    [can]
+    port = can0
+    dbcfile = path/to/your.dbc
+    dbc_default_file = dbc_default_values.json
+    j1939 = False
