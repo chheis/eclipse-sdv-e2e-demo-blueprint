@@ -29,6 +29,8 @@ and set wifi.powersave to 2 (disabled) instead of 3 (enabled)
 - install curl ````sudo apt-get install curl````
 - install vim ````sudo apt-get install vim````
 - install eclipse ankaios (with script)
+- install podman
+  - podman login to ghcr.io (if private packages needed)
 - enable socketCAN with startup (use /etc/systemd/network/80-can.network)
   - ````sudo vim /etc/systemd/network/80-can.network````
   - ````sudo systemctl enable systemd-networkd````
@@ -43,12 +45,13 @@ Use the VSS mapping defined in [`docs/vss-can-signals.md`](../../docs/vss-can-si
 Use the example Ankaios manifest in `devices/raspberry-pi4/ankaios/vehicle-signals.yaml`. It defines the Mosquitto MQTT broker, MQTT-to-gRPC bridge, Kuksa Databroker, and the Kuksa CAN Provider containers as Podman workloads.
 
 1. Copy `devices/raspberry-pi4/ankaios/vehicle-signals.yaml` into your Ankaios manifests directory.
-2. Place VSS metadata at `/opt/kuksa/vss/vss.json` on the Raspberry Pi 4.
-3. Copy `devices/raspberry-pi4/ankaios/can-provider-config.json` to `/opt/kuksa/can-provider/can-provider-config.json` and adjust:
-   - `can.interface` to your SocketCAN device (default: `can0`)
-   - `signals` if you change the CAN IDs or VSS paths
-4. Build the MQTT-to-gRPC bridge image from `devices/raspberry-pi4/grpc-mqtt-bridge` and tag it as `grpc-mqtt-bridge:latest`.
-5. Copy `devices/raspberry-pi4/ankaios/grpc-mqtt.yaml` to `/opt/grpc-mqtt/grpc-mqtt.yaml` and point it at `localhost:1883` (MQTT) and `localhost:55555` (Kuksa Databroker gRPC).
+2. All those are currently embedded in the yaml (TODO: refactoring)
+   1. Place VSS metadata at `/opt/kuksa/vss/vss.json` on the Raspberry Pi 4.
+   2. Copy `devices/raspberry-pi4/ankaios/can-provider-config.json` to `/opt/kuksa/can-provider/can-provider-config.json` and adjust:
+      - `can.interface` to your SocketCAN device (default: `can0`)
+      - `signals` if you change the CAN IDs or VSS paths
+   3. Build the MQTT-to-gRPC bridge image from `devices/raspberry-pi4/grpc-mqtt-bridge` and tag it as `grpc-mqtt-bridge:latest`.
+   4. Copy `devices/raspberry-pi4/ankaios/grpc-mqtt.yaml` to `/opt/grpc-mqtt/grpc-mqtt.yaml` and point it at `localhost:1883` (MQTT) and `localhost:55555` (Kuksa Databroker gRPC).
 
 The template config marks all signals as TX-only so the provider only writes CAN frames (no CAN read-back). If your kuksa-can-provider version uses a different key/value for transmit-only mappings, update the `direction` field accordingly.
 
