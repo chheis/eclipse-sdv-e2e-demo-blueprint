@@ -26,10 +26,13 @@ dtoverlay=mcp2515-can0,oscillator=12000000,interrupt=25,spimaxfrequency=2000000
 and set wifi.powersave to 2 (disabled) instead of 3 (enabled)
 - install can-utils ````sudo apt-get install can-utils````
 - install net-tools ````sudo apt install net-tools ````
-- install curl
+- install curl ````sudo apt-get install curl````
+- install vim ````sudo apt-get install vim````
 - install eclipse ankaios (with script)
-- 
-
+- enable socketCAN with startup (use /etc/systemd/network/80-can.network)
+  - ````sudo vim /etc/systemd/network/80-can.network````
+  - ````sudo systemctl enable systemd-networkd````
+  - ````sudo systemctl restart systemd-networkd````
 
 ## Signal mapping
 

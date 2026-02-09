@@ -22,7 +22,7 @@ workloads:
       - mountPoint: "/config/grpc-mqtt.yaml"
         data: "{{grpc_mqtt_config}}"
     runtimeConfig: |
-      image: grpc-mqtt-bridge:latest
+      image: ghcr.io/chheis/eclipse-sdv-e2e-demo-blueprint/grpc-mqtt-bridge:main
       commandArgs: ["--config", "/config/grpc-mqtt.yaml"]
       commandOptions: ["--net=host"]
   kuksa-databroker:
@@ -55,8 +55,7 @@ workloads:
         data: "{{can_provider_defaults}}"
     runtimeConfig: |
       image: ghcr.io/eclipse-kuksa/kuksa-can-provider/can-provider:0.4.4
-      network: host
-      privileged: true
+      commandOptions: ["--net=host", "--privileged"]
       commandArgs: ["--config", "/config/can-provider-config.ini"]
 configs:
   mosquitto_config: |
