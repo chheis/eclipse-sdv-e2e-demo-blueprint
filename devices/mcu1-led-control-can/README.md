@@ -4,9 +4,14 @@ This device drives an 8‑LED strip over CAN and reports its current light statu
 
 ## Hardware
 
-- Arduino Uno
+- Arduino Uno R4 WiFi
 - MCP2515 CAN module (8 MHz crystal)
 - WS2812 LED strip (8 LEDs)
+
+### Arduino Libs
+- [FastLED](https://github.com/FastLED/FastLED)
+- [107-Arduino-MCP2515](https://github.com/107-systems/107-Arduino-MCP2515)
+
 
 ### LED allocation
 

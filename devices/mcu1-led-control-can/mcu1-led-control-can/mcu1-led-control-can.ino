@@ -155,7 +155,8 @@ void loop() {
     canRxPending = false;
     interrupts();
 
-    if (!(f.id & MCP2515::CAN_EFF_BITMASK) && f.id == CAN_ID_COMMAND && f.len >= 1) {
+    uint32_t normalized_id = f.id & ~(MCP2515::CAN_EFF_BITMASK | MCP2515::CAN_RTR_BITMASK);
+    if (normalized_id == CAN_ID_COMMAND && f.len >= 1) {
       uint8_t flags = f.data[0];
       requestedState.left = (flags >> CAN_SIGNAL_LEFT_BIT) & 0x01;
       requestedState.right = (flags >> CAN_SIGNAL_RIGHT_BIT) & 0x01;
