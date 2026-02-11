@@ -58,7 +58,7 @@ configs:
     port = 55555
     tls = False
     mapping = /config/motorbike-blinker-vss.json
-    dbc2val = False
+    dbc2val = True
     val2dbc = True
 
     [can]
@@ -89,13 +89,17 @@ configs:
                         "description": "Left indicator.",
                         "children": {
                           "IsSignaling": {
-                            "datatype": "boolean",
-                            "description": "Indicates if left indicator is signaling.",
-                            "type": "actuator",
-                            "vss2dbc": {
-                              "signal": "DirectionIndicatorLeft"
-                            }
+                          "datatype": "boolean",
+                          "description": "Indicates if left indicator is signaling.",
+                          "type": "actuator",
+                          "dbc2vss": {
+                            "signal": "DirectionIndicatorLeft",
+                            "on_change": true
+                          },
+                          "vss2dbc": {
+                            "signal": "DirectionIndicatorLeft"
                           }
+                        }
                         }
                       },
                       "Right": {
@@ -103,13 +107,17 @@ configs:
                         "description": "Right indicator.",
                         "children": {
                           "IsSignaling": {
-                            "datatype": "boolean",
-                            "description": "Indicates if right indicator is signaling.",
-                            "type": "actuator",
-                            "vss2dbc": {
-                              "signal": "DirectionIndicatorRight"
-                            }
+                          "datatype": "boolean",
+                          "description": "Indicates if right indicator is signaling.",
+                          "type": "actuator",
+                          "dbc2vss": {
+                            "signal": "DirectionIndicatorRight",
+                            "on_change": true
+                          },
+                          "vss2dbc": {
+                            "signal": "DirectionIndicatorRight"
                           }
+                        }
                         }
                       }
                     }
@@ -118,18 +126,38 @@ configs:
                     "type": "branch",
                     "description": "Brake lights.",
                     "children": {
-                      "IsActive": {
-                        "allowed": [
-                          "INACTIVE",
-                          "ACTIVE",
-                          "ADAPTIVE"
-                        ],
-                        "datatype": "string",
-                        "description": "Indicates if brake-light is active.",
-                        "type": "actuator",
-                        "vss2dbc": {
-                          "signal": "BrakeIsActive",
-                          "transform": {
+                    "IsActive": {
+                      "allowed": [
+                        "INACTIVE",
+                        "ACTIVE",
+                        "ADAPTIVE"
+                      ],
+                      "datatype": "string",
+                      "description": "Indicates if brake-light is active.",
+                      "type": "actuator",
+                      "dbc2vss": {
+                        "signal": "BrakeIsActive",
+                        "on_change": true,
+                        "transform": {
+                          "mapping": [
+                            {
+                              "from": 0,
+                              "to": "INACTIVE"
+                            },
+                            {
+                              "from": 1,
+                              "to": "ACTIVE"
+                            },
+                            {
+                              "from": 2,
+                              "to": "ADAPTIVE"
+                            }
+                          ]
+                        }
+                      },
+                      "vss2dbc": {
+                        "signal": "BrakeIsActive",
+                        "transform": {
                             "mapping": [
                               {
                                 "from": "INACTIVE",
