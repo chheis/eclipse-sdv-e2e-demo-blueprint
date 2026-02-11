@@ -25,16 +25,6 @@ workloads:
       image: ghcr.io/chheis/eclipse-sdv-e2e-demo-blueprint/grpc-mqtt-bridge:main
       commandArgs: ["--config", "/config/grpc-mqtt.yaml"]
       commandOptions: ["--net=host"]
-  kuksa-databroker:
-    runtime: podman
-    agent: agent_B
-    restartPolicy: ALWAYS
-    runtimeConfig: |
-      image: ghcr.io/eclipse-kuksa/kuksa-databroker:0.6.0
-      commandArgs: ["--insecure"]
-      commandOptions: ["--net=host"]
-      volumes:
-        - /opt/kuksa/vss:/data:ro
   kuksa-can-provider:
     runtime: podman
     agent: agent_B
