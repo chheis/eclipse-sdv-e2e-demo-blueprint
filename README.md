@@ -40,6 +40,18 @@ The blinker demo uses the following VSS signals:
 
 The CAN encoding for these signals is documented in [`docs/vss-can-signals.md`](docs/vss-can-signals.md).
 
+## Communication workflow (Raspberry Pi 5 signal stack)
+
+Signal flow used by the Ankaios `vehicle-signals.yaml` workloads:
+
+1. Joystick ECU publishes VSS-aligned JSON to MQTT topic `InVehicleTopics`.
+2. `grpc-mqtt-bridge` converts MQTT payloads into Kuksa Databroker `Val/Set` gRPC updates.
+3. Kuksa CAN Provider (`val2dbc`) emits CAN command frames (`BlinkerCommand`, CAN ID `288`) to the blinker ECU.
+4. Blinker ECU sends status frames (`BlinkerStatus`, CAN ID `289`) back on the CAN bus.
+5. Kuksa CAN Provider (`dbc2val`) writes those status values back into Kuksa Databroker for subscribers.
+
+PlantUML source: [`devices/raspberry-pi5/communication-workflow.puml`](devices/raspberry-pi5/communication-workflow.puml)
+
 ## Quickstart (Fleet Management + Java analytics, Zenoh)
 
 1. Initialize the Fleet Management submodule:

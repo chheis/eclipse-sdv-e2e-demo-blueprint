@@ -1,18 +1,26 @@
 @startuml
-title MQTT to Kuksa Databroker Workflow
+title Raspberry Pi 5 Vehicle Signals Communication Workflow
 
 actor "Driver" as Driver
 participant "Joystick ECU\n(Arduino)" as ECU
 participant "Mosquitto\n(MQTT Broker)" as Broker
 participant "MQTT-to-gRPC Bridge" as Bridge
 participant "Kuksa Databroker" as Kuksa
-participant "CAN Provider" as CAN
+participant "Kuksa CAN Provider" as CAN
+participant "Blinker ECU\n(MCU1 LED Control)" as MCU
+participant "VSS Consumers\n(Fleet/UI/CLI)" as Consumers
 
+== Command path (driver input to actuators) ==
 Driver -> ECU: Move joystick / press button
 ECU -> Broker: Publish JSON on InVehicleTopics
 Broker -> Bridge: Deliver MQTT message
-Bridge -> Kuksa: gRPC Val/Set updates
-Kuksa -> CAN: Target value updates
-CAN -> ECU: CAN frames to blinker ECU
+Bridge -> Kuksa: gRPC Val/Set (VSS updates)
+Kuksa -> CAN: Target value subscription (val2dbc)
+CAN -> MCU: CAN frame BlinkerCommand (ID 288)
+
+== Feedback path (bus state back to VSS) ==
+MCU -> CAN: CAN frame BlinkerStatus (ID 289)
+CAN -> Kuksa: Write current values (dbc2val)
+Kuksa -> Consumers: Read/Subscribe signal state
 
 @enduml
