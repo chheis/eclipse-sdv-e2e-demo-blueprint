@@ -97,6 +97,11 @@ Example RFID payload:
 
 The sample bridge config (`devices/raspberry-pi5/ankaios/grpc-mqtt.yaml`) maps these JSON keys to Kuksa `Val/Set` updates.
 
+For Fleet Management/Influx/Grafana flow, `fms-forwarder` maps
+`Vehicle.Driver.Identifier.Subject` to the telemetry field `driver1Id`
+(`header` measurement), which is shown in the Grafana panel
+`Driver Identifier (RFID)`.
+
 ## Communication workflow diagram
 
 PlantUML source: `devices/raspberry-pi5/communication-workflow.puml`
