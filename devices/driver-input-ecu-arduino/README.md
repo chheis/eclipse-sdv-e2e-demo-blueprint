@@ -1,36 +1,29 @@
 # Driver Input ECU (Arduino + Joystick)
 
-This device represents a manual driver input ECU for the blinkers.
+This device is the manual blinker/brake input ECU.
 
 ## Responsibilities
 
-- - Capture joystick input from an analog Joystick: https://docs.sunfounder.com/projects/elite-explorer-kit/de/latest/basic_projects/20_basic_joystick.html
-- Send VSS-aligned blinker requests to the Raspberry Pi 4 via Ethernet/Wi-Fi and gRPC to the Kuksa databroker.
-- Set target values:
+- Capture joystick input from an analog joystick:
+  - https://docs.sunfounder.com/projects/elite-explorer-kit/de/latest/basic_projects/20_basic_joystick.html
+- Publish VSS-aligned JSON to MQTT topic `InVehicleTopics` on the Raspberry Pi 5 broker.
+- Provide values for:
   - `Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling`
   - `Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling`
   - `Vehicle.Body.Lights.Brake.IsActive`
 
-## gRPC publishing details
+## MQTT publishing details
 
-Use the Kuksa Databroker gRPC API on the Raspberry Pi 4 to publish joystick state.
+- Broker: `<pi5-ip>:1883` (default in sketch: `192.168.88.100:1883`)
+- Topic: `InVehicleTopics`
+- Payload example:
 
-- gRPC endpoint: `<pi4-ip>:55555`
-- Service: `kuksa.val.v1.Val/Set`
-- Update target values on every joystick change (left/right/brake).
-
-Example (using `grpcurl` from a dev machine):
-
-```bash
-grpcurl -plaintext -d '{
-  "updates": [
-    {"entry": {"path": "Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling"}, "value": {"bool": true}},
-    {"entry": {"path": "Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling"}, "value": {"bool": false}},
-    {"entry": {"path": "Vehicle.Body.Lights.Brake.IsActive"}, "value": {"bool": false}}
-  ]
-}' <pi4-ip>:55555 kuksa.val.v1.Val/Set
+```json
+{
+  "Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling": true,
+  "Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling": false,
+  "Vehicle.Body.Lights.Brake.IsActive": "ACTIVE"
+}
 ```
 
-## Status
-
-Implementation placeholder for the demo architecture.
+The MQTT-to-gRPC bridge on the Pi 5 maps this payload to Kuksa Databroker updates.

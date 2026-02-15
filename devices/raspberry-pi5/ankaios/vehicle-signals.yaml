@@ -278,3 +278,6 @@ configs:
             - path: "Vehicle.Body.Lights.Brake.IsActive"
               type: "string"
               jsonPointer: "/Vehicle.Body.Lights.Brake.IsActive"
+            - path: "Vehicle.Driver.Identifier.Subject"
+              type: "string"
+              jsonPointer: "/Vehicle.Driver.Identifier.Subject"

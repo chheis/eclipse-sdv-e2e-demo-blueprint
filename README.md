@@ -17,6 +17,7 @@ This repository prepares a Vehicle E/E Architecture demo that combines the **Fle
   - Publishes current light status over CAN @ 500 kbit/s
 - **Driver input ECUs**
   - Arduino + joystick (manual input)
+  - Arduino + RFID RC522 (driver identifier input)
   - ThreadX board with buttons + OLED (status display)
 
 ## Device code folders
@@ -28,6 +29,7 @@ Each device has a dedicated folder under `devices/`:
 - `devices/mcu1-led-control-can` - Arduino sketch for the LED strip
 - `devices/backend-fleet-analysis-java` - Jakarta EE 21 backend for fleet analytics
 - `devices/driver-input-ecu-arduino` - driver input ECU placeholder
+- `devices/driver-input-ecu-door` - RFID reader input ECU
 - `devices/driver-input-ecu-threadx` - ThreadX input ECU placeholder
 
 ## VSS signals used
@@ -37,6 +39,7 @@ The blinker demo uses the following VSS signals:
 - `Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling`
 - `Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling`
 - `Vehicle.Body.Lights.Brake.IsActive`
+- `Vehicle.Driver.Identifier.Subject`
 
 The CAN encoding for these signals is documented in [`docs/vss-can-signals.md`](docs/vss-can-signals.md).
 
@@ -44,7 +47,7 @@ The CAN encoding for these signals is documented in [`docs/vss-can-signals.md`](
 
 Signal flow used by the Ankaios `vehicle-signals.yaml` workloads:
 
-1. Joystick ECU publishes VSS-aligned JSON to MQTT topic `InVehicleTopics`.
+1. Driver input ECUs (joystick and RFID door reader) publish VSS-aligned JSON to MQTT topic `InVehicleTopics`.
 2. `grpc-mqtt-bridge` converts MQTT payloads into Kuksa Databroker `Val/Set` gRPC updates.
 3. Kuksa CAN Provider (`val2dbc`) emits CAN command frames (`BlinkerCommand`, CAN ID `288`) to the blinker ECU.
 4. Blinker ECU sends status frames (`BlinkerStatus`, CAN ID `289`) back on the CAN bus.

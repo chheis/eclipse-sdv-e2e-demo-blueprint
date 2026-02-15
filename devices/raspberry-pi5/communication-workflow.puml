@@ -2,7 +2,8 @@
 title Raspberry Pi 5 Vehicle Signals Communication Workflow
 
 actor "Driver" as Driver
-participant "Joystick ECU\n(Arduino)" as ECU
+participant "Joystick ECU\n(Arduino)" as JoystickECU
+participant "Door RFID ECU\n(Arduino + RC522)" as RfidECU
 participant "Mosquitto\n(MQTT Broker)" as Broker
 participant "MQTT-to-gRPC Bridge" as Bridge
 participant "Kuksa Databroker" as Kuksa
@@ -11,12 +12,18 @@ participant "Blinker ECU\n(MCU1 LED Control)" as MCU
 participant "VSS Consumers\n(Fleet/UI/CLI)" as Consumers
 
 == Command path (driver input to actuators) ==
-Driver -> ECU: Move joystick / press button
-ECU -> Broker: Publish JSON on InVehicleTopics
+Driver -> JoystickECU: Move joystick / press button
+JoystickECU -> Broker: Publish JSON on InVehicleTopics
 Broker -> Bridge: Deliver MQTT message
 Bridge -> Kuksa: gRPC Val/Set (VSS updates)
 Kuksa -> CAN: Target value subscription (val2dbc)
 CAN -> MCU: CAN frame BlinkerCommand (ID 288)
+
+== Driver identity path (RFID to VSS) ==
+Driver -> RfidECU: Present RFID card
+RfidECU -> Broker: Publish {"Vehicle.Driver.Identifier.Subject":"<UID>"}
+Broker -> Bridge: Deliver MQTT message
+Bridge -> Kuksa: Set Vehicle.Driver.Identifier.Subject (string)
 
 == Feedback path (bus state back to VSS) ==
 MCU -> CAN: CAN frame BlinkerStatus (ID 289)
