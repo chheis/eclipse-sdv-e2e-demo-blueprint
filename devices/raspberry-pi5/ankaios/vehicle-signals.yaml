@@ -29,23 +29,19 @@ workloads:
     runtime: podman
     agent: agent_B
     restartPolicy: ALWAYS
-    configs:
-      can_provider_config: can_provider_config
-      can_provider_mapping: can_provider_mapping
-      can_provider_dbc: can_provider_dbc
-      can_provider_defaults: can_provider_defaults
-    files:
-      - mountPoint: "/config/can-provider-config.ini"
-        data: "{{can_provider_config}}"
-      - mountPoint: "/config/motorbike-blinker-vss.json"
-        data: "{{can_provider_mapping}}"
-      - mountPoint: "/config/motorbike-blinker-command.dbc"
-        data: "{{can_provider_dbc}}"
-      - mountPoint: "/config/motorbike-blinker-defaults.json"
-        data: "{{can_provider_defaults}}"
     runtimeConfig: |
       image: ghcr.io/eclipse-kuksa/kuksa-can-provider/can-provider:0.4.4
-      commandOptions: ["--net=host", "--privileged"]
+      commandOptions:
+        - --net=host
+        - --privileged
+        - -v
+        - /opt/kuksa/can-provider/can-provider-config.ini:/config/can-provider-config.ini
+        - -v
+        - /opt/kuksa/can-provider/motorbike-blinker-vss.json:/config/motorbike-blinker-vss.json
+        - -v
+        - /opt/kuksa/can-provider/motorbike-blinker-command.dbc:/config/motorbike-blinker-command.dbc
+        - -v
+        - /opt/kuksa/can-provider/motorbike-blinker-defaults.json:/config/motorbike-blinker-defaults.json
       commandArgs: ["--config", "/config/can-provider-config.ini"]
 configs:
   mosquitto_config: |
