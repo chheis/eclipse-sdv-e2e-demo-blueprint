@@ -23,6 +23,10 @@
                         "datatype": "boolean",
                         "description": "Indicates if left indicator is signaling.",
                         "type": "actuator",
+                        "dbc2vss": {
+                          "signal": "DirectionIndicatorLeft",
+                          "on_change": true
+                        },
                         "vss2dbc": {
                           "signal": "DirectionIndicatorLeft"
                         }
@@ -37,6 +41,10 @@
                         "datatype": "boolean",
                         "description": "Indicates if right indicator is signaling.",
                         "type": "actuator",
+                        "dbc2vss": {
+                          "signal": "DirectionIndicatorRight",
+                          "on_change": true
+                        },
                         "vss2dbc": {
                           "signal": "DirectionIndicatorRight"
                         }
@@ -58,6 +66,26 @@
                     "datatype": "string",
                     "description": "Indicates if brake-light is active.",
                     "type": "actuator",
+                    "dbc2vss": {
+                      "signal": "BrakeIsActive",
+                      "on_change": true,
+                      "transform": {
+                        "mapping": [
+                          {
+                            "from": 0,
+                            "to": "INACTIVE"
+                          },
+                          {
+                            "from": 1,
+                            "to": "ACTIVE"
+                          },
+                          {
+                            "from": 2,
+                            "to": "ADAPTIVE"
+                          }
+                        ]
+                      }
+                    },
                     "vss2dbc": {
                       "signal": "BrakeIsActive",
                       "transform": {

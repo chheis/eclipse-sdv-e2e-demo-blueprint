@@ -45,15 +45,15 @@ Use the VSS mapping defined in [`docs/vss-can-signals.md`](../../docs/vss-can-si
 Use the example Ankaios manifest in `devices/raspberry-pi5/ankaios/vehicle-signals.yaml`. It defines the Mosquitto MQTT broker, MQTT-to-gRPC bridge, Kuksa Databroker, and the Kuksa CAN Provider containers as Podman workloads.
 
 1. Copy `devices/raspberry-pi5/ankaios/vehicle-signals.yaml` into your Ankaios manifests directory.
-2. All those are currently embedded in the yaml (TODO: refactoring)
-   1. Place VSS metadata at `/opt/kuksa/vss/vss.json` on the Raspberry Pi 5.
-   2. Copy `devices/raspberry-pi5/ankaios/can-provider-config.json` to `/opt/kuksa/can-provider/can-provider-config.json` and adjust:
-      - `can.interface` to your SocketCAN device (default: `can0`)
-      - `signals` if you change the CAN IDs or VSS paths
-   3. Build the MQTT-to-gRPC bridge image from `devices/raspberry-pi5/grpc-mqtt-bridge` and tag it as `grpc-mqtt-bridge:latest`.
-   4. Copy `devices/raspberry-pi5/ankaios/grpc-mqtt.yaml` to `/opt/grpc-mqtt/grpc-mqtt.yaml` and point it at `localhost:1883` (MQTT) and `localhost:55555` (Kuksa Databroker gRPC).
-
-The template config marks all signals as TX-only so the provider only writes CAN frames (no CAN read-back). If your kuksa-can-provider version uses a different key/value for transmit-only mappings, update the `direction` field accordingly.
+2. Copy CAN provider files to `/opt/kuksa/can-provider/` on the Raspberry Pi 5:
+   1. `devices/raspberry-pi5/ankaios/can-provider-config.ini` -> `/opt/kuksa/can-provider/can-provider-config.ini`
+   2. `devices/raspberry-pi5/ankaios/motorbike-blinker-vss.json` -> `/opt/kuksa/can-provider/motorbike-blinker-vss.json`
+   3. `devices/raspberry-pi5/ankaios/motorbike-blinker-command.dbc` -> `/opt/kuksa/can-provider/motorbike-blinker-command.dbc`
+   4. `devices/raspberry-pi5/ankaios/motorbike-blinker-defaults.json` -> `/opt/kuksa/can-provider/motorbike-blinker-defaults.json`
+3. Adjust `can-provider-config.ini` if needed:
+   - `port` in `[can]` to your SocketCAN device (default: `can0`)
+   - `ip` and `port` in `[general]` to your Kuksa Databroker endpoint
+4. Build the MQTT-to-gRPC bridge image from `devices/raspberry-pi5/grpc-mqtt-bridge` and tag it as `grpc-mqtt-bridge:latest`.
 
 The manifest uses host networking so the CAN provider can reach the databroker at `localhost:55555`, the MQTT bridge can reach Mosquitto at `localhost:1883`, and Mosquitto listens on `localhost:1883`. Point Arduino MQTT broker IPs to the Raspberry Pi 5 address (default in `mcu2-joystick-input.ino` and `driver-input-ecu-door.ino` is `192.168.88.100`).
 
