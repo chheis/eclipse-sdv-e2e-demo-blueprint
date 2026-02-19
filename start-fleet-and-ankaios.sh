@@ -39,7 +39,7 @@ docker compose \
   up --detach
 
 if command -v systemctl >/dev/null 2>&1; then
-  log "Starting Ankaios control plane services (ank-server, ank-agent)..."
+  log "Starting Ankaios control plane services as terminal calls (ank-server, ank-agent)..."
   if command -v sudo >/dev/null 2>&1; then
     sudo ank-server& 
     ank-agent --insecure --name agent_B&
