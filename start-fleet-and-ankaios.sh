@@ -41,9 +41,11 @@ docker compose \
 if command -v systemctl >/dev/null 2>&1; then
   log "Starting Ankaios control plane services (ank-server, ank-agent)..."
   if command -v sudo >/dev/null 2>&1; then
-    sudo systemctl start ank-server ank-agent
+    sudo ank-server& 
+    ank-agent --insecure --name agent_B&
   else
-    systemctl start ank-server ank-agent
+    ank-server&
+    ank-agent --insecure --name agent_B&
   fi
 else
   log "systemctl not found. Assuming Ankaios services are already running."
