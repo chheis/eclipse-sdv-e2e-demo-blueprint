@@ -1,0 +1,122 @@
+@startuml
+title Eclipse SDV E2E Demo Blueprint - Full Device and Component Architecture
+left to right direction
+skinparam shadowing false
+skinparam componentStyle rectangle
+
+actor "Driver" as Driver
+actor "Fleet Operator" as Operator
+cloud "Vehicle LAN\n(Wi-Fi / Ethernet)" as VehicleLAN
+cloud "CAN Bus\n500 kbit/s" as CANBus
+cloud "Backend Network\n(fms-backend)" as BackendNet
+
+node "Driver Input ECU - Joystick\n(Arduino Uno R4 WiFi)" as ECU_JOYSTICK {
+  component "Joystick Sensor\n(analog + button)" as JOY_SENSOR
+  component "WiFiS3" as JOY_WIFI
+  component "MQTT Publisher\nTopic: InVehicleTopics" as JOY_MQTT
+}
+
+node "Driver Input ECU - Door\n(Arduino + RC522 RFID)" as ECU_DOOR {
+  component "RC522 RFID Reader" as DOOR_SENSOR
+  component "WiFiS3" as DOOR_WIFI
+  component "MQTT Publisher\nVehicle.Driver.Identifier.Subject" as DOOR_MQTT
+}
+
+node "Driver Input ECU - ThreadX\n(MXChip AZ3166, placeholder)" as ECU_THREADX {
+  component "Buttons + OLED UI" as TX_UI
+  component "NetX Duo Network Client" as TX_NET
+  component "VSS Pub/Sub App\n(placeholder)" as TX_APP
+}
+
+node "MCU1 LED Control ECU\n(Arduino Uno + MCP2515)" as ECU_LED {
+  component "CAN Interface\n(MCP2515 @ 500 kbit/s)" as LED_CAN
+  component "Blinker/Brake Logic" as LED_LOGIC
+  component "WS2812 8-LED Strip" as LED_STRIP
+}
+
+node "Raspberry Pi 5 - In-Vehicle Signal Stack" as PI5 {
+  component "Eclipse Ankaios\n(agent_B + Podman)" as ANKAIOS
+  frame "Workloads" as PI5_WORKLOADS {
+    component "Mosquitto Broker\n:1883" as MOSQ
+    component "grpc-mqtt-bridge" as BRIDGE
+    component "Kuksa Databroker\n:55555" as KDB_VEHICLE
+    component "Kuksa CAN Provider\n(dbc2val + val2dbc)" as CAN_PROVIDER
+  }
+  component "SocketCAN\ncan0" as SOCKETCAN
+  artifact "VSS/CAN Mapping\n(motorbike-blinker-vss.json + .dbc)" as VSS_CAN_MAP
+}
+
+node "Raspberry Pi 4 - HCP / Fleet Host" as PI4 {
+  component "HCP Control Apps\n(Eclipse S-CORE or equivalent)" as HCP
+  frame "Fleet Management + Analytics (Docker Compose)" as FMS_STACK {
+    component "fms-forwarder" as FMS_FORWARDER
+    component "fms-consumer" as FMS_CONSUMER
+    component "fms-zenoh-router" as FMS_ZENOH
+    component "fms-server\nHTTP rFMS API :8081" as FMS_SERVER
+    component "fleet-analysis-backend\nJakarta EE API :8082" as ANALYSIS_API
+    database "InfluxDB 2.7" as INFLUX
+    component "Grafana" as GRAFANA
+    component "csv-provider\n(simulation source, optional)" as CSV_PROVIDER
+    component "Kuksa Databroker\n(fleet stack variant)" as KDB_FLEET
+  }
+}
+
+Driver --> JOY_SENSOR : joystick movement / press
+Driver --> DOOR_SENSOR : RFID card tap
+Driver --> TX_UI : optional button input
+
+JOY_SENSOR --> JOY_MQTT
+DOOR_SENSOR --> DOOR_MQTT
+TX_UI --> TX_APP
+
+JOY_MQTT --> VehicleLAN : MQTT JSON
+DOOR_MQTT --> VehicleLAN : MQTT JSON
+TX_APP --> VehicleLAN : optional VSS updates
+
+VehicleLAN --> MOSQ : MQTT publish/subscribe
+MOSQ --> BRIDGE : subscribed topic\nInVehicleTopics
+BRIDGE --> KDB_VEHICLE : gRPC Val/Set updates
+
+KDB_VEHICLE --> CAN_PROVIDER : target value subscription\n(val2dbc)
+CAN_PROVIDER --> KDB_VEHICLE : current value updates\n(dbc2val)
+CAN_PROVIDER --> SOCKETCAN
+SOCKETCAN --> CANBus : CAN ID 0x120 command\nBlinkerCommand
+CANBus --> SOCKETCAN : CAN ID 0x121 status\nBlinkerStatus
+
+LED_CAN --> CANBus
+LED_CAN --> LED_LOGIC
+LED_LOGIC --> LED_STRIP
+
+HCP --> VehicleLAN : control path
+HCP --> KDB_VEHICLE : gRPC set/get (optional supervisory)
+
+KDB_VEHICLE --> FMS_FORWARDER : read/subscribe VSS/FMS signals
+CSV_PROVIDER --> KDB_FLEET : optional simulated vehicle data
+KDB_FLEET --> FMS_FORWARDER : alternative data source
+KDB_VEHICLE .. KDB_FLEET : deployment variant\n(shared or separate Databroker)
+
+FMS_FORWARDER --> FMS_ZENOH : uProtocol notifications
+FMS_ZENOH --> FMS_CONSUMER : Zenoh transport
+FMS_CONSUMER --> INFLUX : write telemetry
+FMS_SERVER --> INFLUX : query telemetry
+ANALYSIS_API --> INFLUX : read/write derived stats
+GRAFANA --> INFLUX : dashboard queries
+
+Operator --> GRAFANA : dashboard access :3000
+Operator --> FMS_SERVER : rFMS API calls :8081
+Operator --> ANALYSIS_API : fleet-analysis API :8082
+
+note bottom of PI5
+Signal mapping implemented in:
+- docs/vss-can-signals.md
+- devices/raspberry-pi5/ankaios/*.yaml
+- devices/raspberry-pi5/ankaios/*.dbc
+end note
+
+note bottom of PI4
+Fleet stack service definitions in:
+- external/fleet-management/fms-blueprint-compose.yaml
+- external/fleet-management/fms-blueprint-compose-zenoh.yaml
+end note
+
+@enduml
