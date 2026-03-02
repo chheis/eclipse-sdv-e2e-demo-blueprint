@@ -27,9 +27,10 @@ dtoverlay=mcp2515-can0,oscillator=12000000,interrupt=25,spimaxfrequency=2000000
 - install git and clone this repo:
   - ````sudo apt update ````
   - ````sudo apt install git ````
-  - ````git clone https://github.com/chheis/eclipse-sdv-e2e-demo-blueprint ````
+  - ````git clone https://github.com/chheis/eclipse-sdv-e2e-demo-blueprint --recurse-submodules````
   - ````cd eclipse-sdv-e2e-demo-blueprint/devices/raspberry-pi5/ ````
   - ````chmod +x setup.sh ````
+  - Hint: if you miss --recurse-submodules in the begining use: ````git submodules init ```` and ````git pull --recurse-submodules````
 - use the setup.sh
   1. ````ANKAIOS_INSTALL_URL="https://github.com/eclipse-ankaios/ankaios/releases/latest/download/install.sh" ````
   2. ```` sudo ./setup.sh````
@@ -46,6 +47,11 @@ dtoverlay=mcp2515-can0,oscillator=12000000,interrupt=25,spimaxfrequency=2000000
     -  ````sudo systemctl enable systemd-networkd````
     - ````sudo systemctl restart systemd-networkd````
   9. install eclipse ankaios (with script) ````curl -sfL https://github.com/eclipse-ankaios/ankaios/releases/latest/download/install.sh | bash - ````
+- Maybe use this to init the network: ````docker swarm init ````  
+- start the workload from eclipse-sdv-e2e-demo-blueprint root folder: ````sudo ./start-fleet-and-ankaios.sh```` 
+
+Hint: First Run takes a long time as all images for fleet-management blueprint must be build locally!
+
 
 ## Signal mapping
 
