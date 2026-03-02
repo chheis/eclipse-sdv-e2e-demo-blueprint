@@ -35,7 +35,7 @@ if systemctl is-active --quiet NetworkManager; then
   systemctl reload NetworkManager || systemctl restart NetworkManager
 fi
 
-ANKAIOS_INSTALL_URL = "https://github.com/eclipse-ankaios/ankaios/releases/latest/download/install.sh"
+ANKAIOS_INSTALL_URL="https://github.com/eclipse-ankaios/ankaios/releases/latest/download/install.sh"
 
 if [ -n "${ANKAIOS_INSTALL_URL:-}" ]; then
   log "Installing Eclipse Ankaios from ${ANKAIOS_INSTALL_URL}..."
