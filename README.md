@@ -4,13 +4,13 @@ This repository prepares a Vehicle E/E Architecture demo that combines the **Fle
 
 ## Architecture overview
 
-- **Raspberry Pi 4 (Connectivity Unit)**
+- **Raspberry Pi 5 (HPC / FleetDisplay)**
   - Ubuntu
   - Eclipse Ankaios 0.7.0 (Podman workloads)
   - Kuksa Databroker 0.6.0
   - Kuksa CAN Provider + SocketCAN
   - Fleet Management Blueprint services
-- **Raspberry Pi 5 (HCP)**
+- **Raspberry Pi 4 (HPC)**
   - Optional higher-level control (Eclipse S-CORE or equivalent)
 - **MCU1 LED Control (Arduino Uno + MCP2515)**
   - Controls 8-LED strip for left/right indicators and brake light
