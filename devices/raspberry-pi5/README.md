@@ -41,14 +41,14 @@ dtoverlay=mcp2515-can0,oscillator=12000000,interrupt=25,spimaxfrequency=2000000
   4.  install curl ````sudo apt-get install curl````
   5.  install vim ````sudo apt-get install vim````
   6.  install podman
-  7.  podman login to ghcr.io (if private packages needed, from the same user that runs `ank-agent`)
+  7.  podman login to ghcr.io (if private packages needed)
   8.  enable socketCAN with startup (use /etc/systemd/network/80-can.network)
     -  ````sudo vim /etc/systemd/network/80-can.network````
     -  ````sudo systemctl enable systemd-networkd````
     - ````sudo systemctl restart systemd-networkd````
   9. install eclipse ankaios (with script) ````curl -sfL https://github.com/eclipse-ankaios/ankaios/releases/latest/download/install.sh | bash - ````
 - Maybe use this to init the network: ````docker swarm init ````  
-- start the workload from eclipse-sdv-e2e-demo-blueprint root folder: ````./start-fleet-and-ankaios.sh```` 
+- start the workload from eclipse-sdv-e2e-demo-blueprint root folder: ````sudo ./start-fleet-and-ankaios.sh```` 
 
 Hint: First Run takes a long time as all images for fleet-management blueprint must be build locally!
 
