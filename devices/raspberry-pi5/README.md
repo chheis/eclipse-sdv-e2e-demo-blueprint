@@ -14,27 +14,29 @@ This node runs the Fleet Management Blueprint components plus the vehicle signal
 - **Fleet Management Blueprint** services (as defined in the upstream repository)
 - **Fleet Analysis Backend** (Jakarta EE) container
 
-## Raspberry Pi5 config
-- modify config.txt
-- For the single CAN Hat add:
+## Raspberry Pi5 Setup / SW + HW
+- for the 10" display connect the HDMI and USB for power supply
+- flash SD-Card with Ubuntu 24.04.xx Desktop (https://www.raspberrypi.com/software/)
+- modify config.txt: For the single CAN Hat add this line at the end of the file
 ````
 dtoverlay=mcp2515-can0,oscillator=12000000,interrupt=25,spimaxfrequency=2000000
 ````
-- for the 10" display connect the HDMI and USB for power supply
-- disable the network energy saving mode
-````/etc/NetworkManager/conf.d/default-wifi-powersave-on.conf````
-and set wifi.powersave to 2 (disabled) instead of 3 (enabled)
-- install can-utils ````sudo apt-get install can-utils````
-- install net-tools ````sudo apt install net-tools ````
-- install curl ````sudo apt-get install curl````
-- install vim ````sudo apt-get install vim````
-- install eclipse ankaios (with script)
-- install podman
-  - podman login to ghcr.io (if private packages needed)
-- enable socketCAN with startup (use /etc/systemd/network/80-can.network)
-  - ````sudo vim /etc/systemd/network/80-can.network````
-  - ````sudo systemctl enable systemd-networkd````
-  - ````sudo systemctl restart systemd-networkd````
+- insert the SD Card in the RPi and boot it up.
+- finish the config wizard and configure your WiFi
+- Hint: Setup all WiFi devices in the SAME WiFi and ensure that the Router is performant enough and is very near! MQTT connection loss could be happening if not done so.
+- use the setup.sh or do those steps manual:
+  1. disable the network energy saving mode ````/etc/NetworkManager/conf.d/default-wifi-powersave-on.conf```` and set wifi.powersave to 2 (disabled) instead of 3 (enabled)
+  2.  install can-utils ````sudo apt-get install can-utils````
+  3.  install net-tools ````sudo apt install net-tools ````
+  4.  install curl ````sudo apt-get install curl````
+  5.  install vim ````sudo apt-get install vim````
+  6.  install podman
+  7.  podman login to ghcr.io (if private packages needed)
+  8.  enable socketCAN with startup (use /etc/systemd/network/80-can.network)
+    -  ````sudo vim /etc/systemd/network/80-can.network````
+    -  ````sudo systemctl enable systemd-networkd````
+    - ````sudo systemctl restart systemd-networkd````
+  9. install eclipse ankaios (with script)
 
 ## Signal mapping
 
