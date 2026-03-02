@@ -30,7 +30,10 @@ dtoverlay=mcp2515-can0,oscillator=12000000,interrupt=25,spimaxfrequency=2000000
   - ````git clone https://github.com/chheis/eclipse-sdv-e2e-demo-blueprint ````
   - ````cd eclipse-sdv-e2e-demo-blueprint/devices/raspberry-pi5/ ````
   - ````chmod +x setup.sh ````
-- use the setup.sh or do those steps manual:
+- use the setup.sh
+  1. ````ANKAIOS_INSTALL_URL="https://github.com/eclipse-ankaios/ankaios/releases/latest/download/install.sh" ````
+  2. ```` sudo ./setup.sh````
+- or do those steps manual:
   1. disable the network energy saving mode ````/etc/NetworkManager/conf.d/default-wifi-powersave-on.conf```` and set wifi.powersave to 2 (disabled) instead of 3 (enabled)
   2.  install can-utils ````sudo apt-get install can-utils````
   3.  install net-tools ````sudo apt install net-tools ````
@@ -42,7 +45,7 @@ dtoverlay=mcp2515-can0,oscillator=12000000,interrupt=25,spimaxfrequency=2000000
     -  ````sudo vim /etc/systemd/network/80-can.network````
     -  ````sudo systemctl enable systemd-networkd````
     - ````sudo systemctl restart systemd-networkd````
-  9. install eclipse ankaios (with script)
+  9. install eclipse ankaios (with script) ````curl -sfL https://github.com/eclipse-ankaios/ankaios/releases/latest/download/install.sh | bash - ````
 
 ## Signal mapping
 
