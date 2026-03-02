@@ -7,9 +7,32 @@ if [ "${EUID:-$(id -u)}" -ne 0 ]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+KUKSA_CAN_PROVIDER_SRC_DIR="${SCRIPT_DIR}/ankaios"
+KUKSA_CAN_PROVIDER_DST_DIR="/opt/kuksa/can-provider"
+KUKSA_CAN_PROVIDER_FILES=(
+  "can-provider-config.ini"
+  "motorbike-blinker-vss.json"
+  "motorbike-blinker-command.dbc"
+  "motorbike-blinker-defaults.json"
+)
 
 log() {
   printf "[setup] %s\n" "$*"
+}
+
+install_can_provider_assets() {
+  log "Installing Kuksa CAN provider assets to ${KUKSA_CAN_PROVIDER_DST_DIR}..."
+  install -d -m 0755 "${KUKSA_CAN_PROVIDER_DST_DIR}"
+
+  for file in "${KUKSA_CAN_PROVIDER_FILES[@]}"; do
+    src="${KUKSA_CAN_PROVIDER_SRC_DIR}/${file}"
+    dst="${KUKSA_CAN_PROVIDER_DST_DIR}/${file}"
+    if [ ! -f "${src}" ]; then
+      echo "Missing required CAN provider asset: ${src}" >&2
+      exit 1
+    fi
+    install -m 0644 "${src}" "${dst}"
+  done
 }
 
 log "Updating apt and installing packages..."
@@ -66,6 +89,8 @@ log "Configuring SocketCAN (systemd-networkd)..."
 install -D -m 0644 "${SCRIPT_DIR}/80-can.network" /etc/systemd/network/80-can.network
 systemctl enable systemd-networkd
 systemctl restart systemd-networkd
+
+install_can_provider_assets
 
 if [ "${PODMAN_LOGIN_GHCR:-0}" = "1" ]; then
   log "Logging into ghcr.io (podman login)..."

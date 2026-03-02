@@ -47,6 +47,11 @@ dtoverlay=mcp2515-can0,oscillator=12000000,interrupt=25,spimaxfrequency=2000000
     -  ````sudo systemctl enable systemd-networkd````
     - ````sudo systemctl restart systemd-networkd````
   9. install eclipse ankaios (with script) ````curl -sfL https://github.com/eclipse-ankaios/ankaios/releases/latest/download/install.sh | bash - ````
+  10. Copy needed files to /opt/kuksa/can-provider
+      1. "can-provider-config.ini"
+      2. "motorbike-blinker-vss.json"
+      3. "motorbike-blinker-command.dbc"
+      4. "motorbike-blinker-defaults.json"
 - Maybe use this to init the network: ````docker swarm init ````  
 - start the workload from eclipse-sdv-e2e-demo-blueprint root folder: ````sudo ./start-fleet-and-ankaios.sh```` 
 
