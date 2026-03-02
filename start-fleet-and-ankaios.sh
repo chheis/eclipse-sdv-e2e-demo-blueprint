@@ -7,6 +7,8 @@ FLEET_COMPOSE_FILE="${FLEET_COMPOSE_FILE:-${SCRIPT_DIR}/external/fleet-managemen
 FLEET_TRANSPORT_COMPOSE_FILE="${FLEET_TRANSPORT_COMPOSE_FILE:-${SCRIPT_DIR}/external/fleet-management/fms-blueprint-compose-zenoh.yaml}"
 ANKAIOS_MANIFEST="${ANKAIOS_MANIFEST:-${SCRIPT_DIR}/devices/raspberry-pi5/ankaios/vehicle-signals.yaml}"
 ANKAIOS_START_WAIT_SECONDS="${ANKAIOS_START_WAIT_SECONDS:-2}"
+ANKAIOS_AGENT_NAME="${ANKAIOS_AGENT_NAME:-agent_B}"
+ANKAIOS_AGENT_USER="${ANKAIOS_AGENT_USER:-${SUDO_USER:-}}"
 
 log() {
   printf "[start] %s\n" "$*"
@@ -26,6 +28,32 @@ require_file() {
   fi
 }
 
+start_ank_server() {
+  if [ "${EUID:-$(id -u)}" -eq 0 ]; then
+    ank-server &
+    return
+  fi
+
+  if command -v sudo >/dev/null 2>&1; then
+    sudo ank-server &
+  else
+    ank-server &
+  fi
+}
+
+start_ank_agent() {
+  if [ -n "$ANKAIOS_AGENT_USER" ] && [ "$ANKAIOS_AGENT_USER" != "root" ] && command -v sudo >/dev/null 2>&1; then
+    log "Starting ank-agent as ${ANKAIOS_AGENT_USER} (uses that user's Podman login)."
+    sudo -u "$ANKAIOS_AGENT_USER" ank-agent --insecure --name "$ANKAIOS_AGENT_NAME" &
+    return
+  fi
+
+  if [ "${EUID:-$(id -u)}" -eq 0 ]; then
+    log "Starting ank-agent as root (root Podman auth will be used)."
+  fi
+  ank-agent --insecure --name "$ANKAIOS_AGENT_NAME" &
+}
+
 require_cmd docker
 require_cmd ank
 require_file "$FLEET_COMPOSE_FILE"
@@ -39,14 +67,8 @@ docker compose \
   up --detach
 
 log "Starting Ankaios control plane services as terminal calls (ank-server, ank-agent)..."
-
-if command -v sudo >/dev/null 2>&1; then
-  sudo ank-server &
-else
-  ank-server &
-fi
-
-ank-agent --insecure --name agent_B &
+start_ank_server
+start_ank_agent
 
 log "Waiting ${ANKAIOS_START_WAIT_SECONDS}s for Ankaios startup..."
 sleep "${ANKAIOS_START_WAIT_SECONDS}"
