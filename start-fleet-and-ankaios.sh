@@ -38,18 +38,15 @@ docker compose \
   -f "$FLEET_TRANSPORT_COMPOSE_FILE" \
   up --detach
 
-if command -v systemctl >/dev/null 2>&1; then
-  log "Starting Ankaios control plane services as terminal calls (ank-server, ank-agent)..."
-  if command -v sudo >/dev/null 2>&1; then
-    sudo ank-server& 
-    ank-agent --insecure --name agent_B&
-  else
-    ank-server&
-    ank-agent --insecure --name agent_B&
-  fi
+log "Starting Ankaios control plane services as terminal calls (ank-server, ank-agent)..."
+
+if command -v sudo >/dev/null 2>&1; then
+  sudo ank-server &
 else
-  log "systemctl not found. Assuming Ankaios services are already running."
+  ank-server &
 fi
+
+ank-agent --insecure --name agent_B &
 
 log "Waiting ${ANKAIOS_START_WAIT_SECONDS}s for Ankaios startup..."
 sleep "${ANKAIOS_START_WAIT_SECONDS}"
