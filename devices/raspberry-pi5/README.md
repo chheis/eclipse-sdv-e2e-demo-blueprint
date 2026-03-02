@@ -24,6 +24,12 @@ dtoverlay=mcp2515-can0,oscillator=12000000,interrupt=25,spimaxfrequency=2000000
 - insert the SD Card in the RPi and boot it up.
 - finish the config wizard and configure your WiFi
 - Hint: Setup all WiFi devices in the SAME WiFi and ensure that the Router is performant enough and is very near! MQTT connection loss could be happening if not done so.
+- install git and clone this repo:
+  - ````sudo apt update ````
+  - ````sudo apt install git ````
+  - ````git clone https://github.com/chheis/eclipse-sdv-e2e-demo-blueprint ````
+  - ````cd eclipse-sdv-e2e-demo-blueprint/devices/raspberry-pi5/ ````
+  - ````chmod +x setup.sh ````
 - use the setup.sh or do those steps manual:
   1. disable the network energy saving mode ````/etc/NetworkManager/conf.d/default-wifi-powersave-on.conf```` and set wifi.powersave to 2 (disabled) instead of 3 (enabled)
   2.  install can-utils ````sudo apt-get install can-utils````
