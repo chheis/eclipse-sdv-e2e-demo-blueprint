@@ -49,6 +49,8 @@ stop_podman_containers() {
 
   log "Stopping all running Podman containers..."
   podman stop -a
+  log "Remove all Podman containers..."
+  podman rm -a -f
 }
 
 stop_ankaios_processes() {
