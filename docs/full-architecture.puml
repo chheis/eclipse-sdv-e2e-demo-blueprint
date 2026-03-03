@@ -34,9 +34,9 @@ node "MCU1 LED Control ECU\n(Arduino Uno + MCP2515)" as ECU_LED {
   component "WS2812 8-LED Strip" as LED_STRIP
 }
 
-node "Raspberry Pi 5 - In-Vehicle Signal Stack" as PI5 {
+node "Raspberry Pi 5 - Unified Vehicle + Fleet Host" as PI5 {
   component "Eclipse Ankaios\n(agent_B + Podman)" as ANKAIOS
-  frame "Workloads" as PI5_WORKLOADS {
+  frame "Signal Workloads (Podman)" as PI5_WORKLOADS {
     component "Mosquitto Broker\n:1883" as MOSQ
     component "grpc-mqtt-bridge" as BRIDGE
     component "Kuksa Databroker\n:55555" as KDB_VEHICLE
@@ -44,10 +44,6 @@ node "Raspberry Pi 5 - In-Vehicle Signal Stack" as PI5 {
   }
   component "SocketCAN\ncan0" as SOCKETCAN
   artifact "VSS/CAN Mapping\n(motorbike-blinker-vss.json + .dbc)" as VSS_CAN_MAP
-}
-
-node "Raspberry Pi 4 - HCP / Fleet Host" as PI4 {
-  component "HCP Control Apps\n(Eclipse S-CORE or equivalent)" as HCP
   frame "Fleet Management + Analytics (Docker Compose)" as FMS_STACK {
     component "fms-forwarder" as FMS_FORWARDER
     component "fms-consumer" as FMS_CONSUMER
@@ -59,6 +55,11 @@ node "Raspberry Pi 4 - HCP / Fleet Host" as PI4 {
     component "csv-provider\n(simulation source, optional)" as CSV_PROVIDER
     component "Kuksa Databroker\n(fleet stack variant)" as KDB_FLEET
   }
+  component "HCP Control Apps\n(optional placeholder)" as HCP
+}
+
+node "Raspberry Pi 4 - Placeholder" as PI4 {
+  component "Future split deployment target\n(optional)" as PI4_PLACEHOLDER
 }
 
 Driver --> JOY_SENSOR : joystick movement / press
@@ -111,12 +112,14 @@ Signal mapping implemented in:
 - docs/vss-can-signals.md
 - devices/raspberry-pi5/ankaios/*.yaml
 - devices/raspberry-pi5/ankaios/*.dbc
+Fleet stack service definitions:
+- external/fleet-management/fms-blueprint-compose.yaml
+- external/fleet-management/fms-blueprint-compose-zenoh.yaml
 end note
 
 note bottom of PI4
-Fleet stack service definitions in:
-- external/fleet-management/fms-blueprint-compose.yaml
-- external/fleet-management/fms-blueprint-compose-zenoh.yaml
+Current implementation runs fleet + signal workloads on Raspberry Pi 5.
+Raspberry Pi 4 is kept as a placeholder for future split deployment.
 end note
 
 @enduml

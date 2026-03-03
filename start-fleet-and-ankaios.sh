@@ -46,10 +46,22 @@ else
   ank-server &
 fi
 
-ank-agent --insecure --name agent_B &
+if command -v sudo >/dev/null 2>&1; then
+  sudo ank-agent --insecure --name agent_B &
+else
+  ank-agent --insecure --name agent_B &
+fi
+
 
 log "Waiting ${ANKAIOS_START_WAIT_SECONDS}s for Ankaios startup..."
 sleep "${ANKAIOS_START_WAIT_SECONDS}"
+
+log "Logging into ghcr.io (podman login)..."
+if command -v sudo >/dev/null 2>&1; then
+  sudo podman login ghcr.io
+else
+  podman login ghcr.io
+fi
 
 log "Applying Ankaios workload manifest: ${ANKAIOS_MANIFEST}"
 ank -k apply "$ANKAIOS_MANIFEST"
