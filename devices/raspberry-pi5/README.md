@@ -109,6 +109,12 @@ Example joystick payload:
 }
 ```
 
+Test publish with mosquitto_pub:
+
+```bash
+mosquitto_pub -h localhost -p 1883 -t InVehicleTopics -q 0 -m '{"Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling":true,"Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling":false,"Vehicle.Body.Lights.Brake.IsActive":"INACTIVE"}'
+```
+
 Example RFID payload:
 
 ```json
