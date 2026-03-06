@@ -141,15 +141,21 @@ a {
 }
 
 .architecture-stage {
+  display: flex;
+  justify-content: center;
+}
+
+.architecture-canvas {
   position: relative;
+  width: min(100%, 1200px);
+  aspect-ratio: 1200 / 720;
   border-radius: 0.8rem;
   border: 1px solid var(--border);
-  min-height: 720px;
-  padding: 1rem;
   overflow: hidden;
   background:
     linear-gradient(0deg, rgba(4, 20, 32, 0.8), rgba(8, 29, 40, 0.62)),
     url("./assets/demostrator-bg.png") center/cover no-repeat;
+  box-shadow: 0 22px 50px rgba(2, 10, 15, 0.28);
 }
 
 .link-layer {
@@ -191,7 +197,8 @@ a {
 
 .node {
   position: absolute;
-  width: 180px;
+  width: var(--node-width, 15%);
+  min-height: 90px;
   background: rgba(10, 33, 49, 0.84);
   border: 1px solid var(--border);
   border-radius: 0.65rem;
@@ -230,15 +237,59 @@ a {
   opacity: 0.8;
 }
 
-.node-large { left: 24px; top: 240px; width: 220px; }
-.mosquitto { left: 340px; top: 240px; }
-.bridge { left: 490px; top: 262px; }
-.kuksa { left: 640px; top: 262px; }
-.can-provider { left: 790px; top: 262px; }
-.blinker { left: 980px; top: 262px; }
-.ankaios { left: 545px; top: 62px; width: 190px; }
-.fms { left: 885px; top: 84px; width: 210px; }
-.dozzle { left: 560px; top: 540px; width: 210px; }
+.node-large {
+  --node-width: 18.333%;
+  left: 2%;
+  top: 39.444%;
+}
+
+.mosquitto {
+  --node-width: 13.667%;
+  left: 23.833%;
+  top: 39.444%;
+}
+
+.bridge {
+  --node-width: 14.167%;
+  left: 39.583%;
+  top: 39.444%;
+}
+
+.kuksa {
+  --node-width: 14.167%;
+  left: 55.417%;
+  top: 39.444%;
+}
+
+.can-provider {
+  --node-width: 14.583%;
+  left: 71.25%;
+  top: 39.444%;
+}
+
+.blinker {
+  --node-width: 12.083%;
+  left: 86.667%;
+  top: 39.444%;
+}
+
+.ankaios {
+  --node-width: 15.417%;
+  left: 45%;
+  top: 10%;
+}
+
+.fms {
+  --node-width: 17.5%;
+  left: 73.5%;
+  top: 13.889%;
+}
+
+.dozzle {
+  --node-width: 18.333%;
+  left: 44.167%;
+  top: 79.861%;
+}
 
 .legend {
   list-style: none;
@@ -478,24 +529,18 @@ td {
     flex-direction: column;
   }
 
-  .architecture-stage {
-    min-height: 880px;
-  }
-
   .node {
-    transform: scale(0.95);
-    transform-origin: top left;
+    min-height: 80px;
+    padding: 0.5rem 0.56rem;
   }
 
-  .node-large { left: 16px; top: 220px; }
-  .mosquitto { left: 250px; top: 220px; }
-  .bridge { left: 410px; top: 250px; }
-  .kuksa { left: 570px; top: 250px; }
-  .can-provider { left: 730px; top: 250px; }
-  .blinker { left: 900px; top: 250px; }
-  .ankaios { left: 430px; top: 50px; }
-  .fms { left: 760px; top: 70px; }
-  .dozzle { left: 450px; top: 520px; }
+  .node h3 {
+    font-size: 0.84rem;
+  }
+
+  .node p {
+    font-size: 0.72rem;
+  }
 }
 
 @media (max-width: 760px) {
@@ -503,8 +548,10 @@ td {
     flex-wrap: wrap;
   }
 
-  .architecture-stage {
-    min-height: 1180px;
+  .architecture-canvas {
+    aspect-ratio: auto;
+    min-height: 0;
+    padding: 1rem;
   }
 
   .node {

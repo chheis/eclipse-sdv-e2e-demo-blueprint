@@ -33,66 +33,68 @@
       </div>
 
       <div class="architecture-stage">
-        <svg class="link-layer" viewBox="0 0 1200 720" preserveAspectRatio="none" aria-hidden="true">
-          <path class="arch-link" data-conn="mqtt_transfer" d="M140 300 L300 300 L300 275 L420 275" />
-          <path class="arch-link" data-conn="mqtt_transfer" d="M300 330 L300 330 L300 320 L420 320" />
-          <path class="arch-link" data-conn="mqtt_transfer" d="M510 298 L620 298" />
-          <path class="arch-link" data-conn="databroker_signals" d="M730 298 L840 298" />
-          <path class="arch-link" data-conn="can_feedback" d="M920 320 L1030 320" />
-          <path class="arch-link" data-conn="can_feedback" d="M1030 340 L920 340" />
-          <path class="arch-link" data-conn="fms_pipeline" d="M710 265 L710 170 L900 170" />
-          <path class="arch-link" data-conn="ankaios_workloads" d="M640 120 L450 250" />
-          <path class="arch-link" data-conn="ankaios_workloads" d="M640 120 L640 250" />
-          <path class="arch-link" data-conn="ankaios_workloads" d="M640 120 L860 250" />
-          <path class="arch-link" data-conn="dozzle_monitoring" d="M650 560 L520 325" />
-          <path class="arch-link" data-conn="dozzle_monitoring" d="M650 560 L700 325" />
-          <path class="arch-link" data-conn="dozzle_monitoring" d="M650 560 L920 325" />
-        </svg>
+        <div class="architecture-canvas">
+          <svg class="link-layer" viewBox="0 0 1200 720" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            <path class="arch-link" data-conn="mqtt_transfer" d="M244 330 L286 330" />
+            <path class="arch-link" data-conn="mqtt_transfer" d="M450 330 L475 330" />
+            <path class="arch-link" data-conn="mqtt_transfer" d="M645 330 L665 330" />
+            <path class="arch-link" data-conn="databroker_signals" d="M835 330 L855 330" />
+            <path class="arch-link" data-conn="can_feedback" d="M1030 330 L1040 330" />
+            <path class="arch-link" data-conn="can_feedback" d="M1040 350 L1030 350" />
+            <path class="arch-link" data-conn="fms_pipeline" d="M750 284 L750 210 L987 210" />
+            <path class="arch-link" data-conn="ankaios_workloads" d="M632 162 L560 284" />
+            <path class="arch-link" data-conn="ankaios_workloads" d="M632 162 L750 284" />
+            <path class="arch-link" data-conn="ankaios_workloads" d="M632 162 L943 284" />
+            <path class="arch-link" data-conn="dozzle_monitoring" d="M640 575 L560 376" />
+            <path class="arch-link" data-conn="dozzle_monitoring" d="M640 575 L750 376" />
+            <path class="arch-link" data-conn="dozzle_monitoring" d="M640 575 L1112 376" />
+          </svg>
 
-        <article class="node driver node-large" data-service="mqtt_transfer">
-          <h3>Driver Input ECUs</h3>
-          <p>Joystick + RFID on Arduino publish MQTT JSON on <code>InVehicleTopics</code>.</p>
-        </article>
+          <article class="node driver node-large" data-service="mqtt_transfer">
+            <h3>Driver Input ECUs</h3>
+            <p>Joystick + RFID on Arduino publish MQTT JSON on <code>InVehicleTopics</code>.</p>
+          </article>
 
-        <article class="node mosquitto" data-service="mqtt">
-          <h3>Mosquitto Broker</h3>
-          <p>Topic router for in-vehicle MQTT transfer.</p>
-        </article>
+          <article class="node mosquitto" data-service="mqtt">
+            <h3>Mosquitto Broker</h3>
+            <p>Topic router for in-vehicle MQTT transfer.</p>
+          </article>
 
-        <article class="node bridge" data-service="mqtt_transfer">
-          <h3>grpc-mqtt-bridge</h3>
-          <p>Converts MQTT payloads into Kuksa <code>Val/Set</code> updates.</p>
-        </article>
+          <article class="node bridge" data-service="mqtt_transfer">
+            <h3>grpc-mqtt-bridge</h3>
+            <p>Converts MQTT payloads into Kuksa <code>Val/Set</code> updates.</p>
+          </article>
 
-        <article class="node kuksa" data-service="kuksa">
-          <h3>Kuksa Databroker</h3>
-          <p>Vehicle signal state and subscriptions.</p>
-        </article>
+          <article class="node kuksa" data-service="kuksa">
+            <h3>Kuksa Databroker</h3>
+            <p>Vehicle signal state and subscriptions.</p>
+          </article>
 
-        <article class="node can-provider" data-service="databroker_signals">
-          <h3>Kuksa CAN Provider</h3>
-          <p>Maps VSS signals to CAN frames and back.</p>
-        </article>
+          <article class="node can-provider" data-service="databroker_signals">
+            <h3>Kuksa CAN Provider</h3>
+            <p>Maps VSS signals to CAN frames and back.</p>
+          </article>
 
-        <article class="node blinker" data-service="can_feedback">
-          <h3>Blinker ECU</h3>
-          <p>MCU LED control receives command and sends status feedback.</p>
-        </article>
+          <article class="node blinker" data-service="can_feedback">
+            <h3>Blinker ECU</h3>
+            <p>MCU LED control receives command and sends status feedback.</p>
+          </article>
 
-        <article class="node ankaios" data-service="ankaios_workloads">
-          <h3>Ankaios</h3>
-          <p>Controls workloads and runtime state on the Pi5.</p>
-        </article>
+          <article class="node ankaios" data-service="ankaios_workloads">
+            <h3>Ankaios</h3>
+            <p>Controls workloads and runtime state on the Pi5.</p>
+          </article>
 
-        <article class="node fms" data-service="fms_pipeline">
-          <h3>FMS + Grafana</h3>
-          <p>Consumes vehicle signals for fleet analytics dashboards.</p>
-        </article>
+          <article class="node fms" data-service="fms_pipeline">
+            <h3>FMS + Grafana</h3>
+            <p>Consumes vehicle signals for fleet analytics dashboards.</p>
+          </article>
 
-        <article class="node dozzle" data-service="dozzle_monitoring">
-          <h3>Dozzle</h3>
-          <p>Live container logs and runtime observability.</p>
-        </article>
+          <article class="node dozzle" data-service="dozzle_monitoring">
+            <h3>Dozzle</h3>
+            <p>Live container logs and runtime observability.</p>
+          </article>
+        </div>
       </div>
 
       <ul class="legend" aria-label="Status Legend">
