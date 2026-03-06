@@ -527,6 +527,9 @@ def activity_logs_unavailable(activity: dict[str, Any]) -> bool:
     logs_available = activity.get("logs_available")
     if logs_available is False:
         return True
+    lines = activity.get("lines")
+    if isinstance(lines, int) and lines == 0:
+        return True
     detail = value_to_text(activity.get("detail"), "").lower()
     return "logs failed" in detail or "container not found" in detail or "unavailable" in detail
 
@@ -647,10 +650,10 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
     feedback_paths_set = set(feedback_paths)
 
     command_traffic_from_observer = observer_available and (
-        bool(observer_changed_paths.intersection(command_paths_set)) or observer_recent
+        bool(observer_changed_paths.intersection(command_paths_set)) or observer_recent or observer_has_values
     )
     feedback_traffic_from_observer = observer_available and (
-        bool(observer_changed_paths.intersection(feedback_paths_set)) or observer_recent
+        bool(observer_changed_paths.intersection(feedback_paths_set)) or observer_recent or observer_has_values
     )
     databroker_traffic_from_observer = observer_available and (
         bool(observer_changed_paths) or observer_recent or observer_has_values

@@ -1,5 +1,5 @@
 const STATUS_ENDPOINT = "/api/status";
-const POLL_INTERVAL_MS = 3000;
+const POLL_INTERVAL_MS = 1000;
 
 let demoTick = 0;
 
