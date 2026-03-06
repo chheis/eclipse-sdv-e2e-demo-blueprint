@@ -264,8 +264,8 @@ function buildDemoStatus() {
       mqtt_transfer: { active: true, traffic_detected: highTraffic },
       databroker_signals: { active: true, traffic_detected: highTraffic || lowTraffic },
       can_feedback: { active: true, traffic_detected: highTraffic },
-      fms_pipeline: { active: true, traffic_detected: lowTraffic },
-      ankaios_workloads: { active: true, traffic_detected: true },
+      fms_pipeline: { active: false, traffic_detected: false },
+      ankaios_workloads: { active: false, traffic_detected: false },
       dozzle_monitoring: { active: true, traffic_detected: true },
     },
   };

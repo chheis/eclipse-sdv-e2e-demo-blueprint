@@ -4,15 +4,15 @@
   "assume_traffic_when_logs_unavailable": true,
   "require_container_presence_for_active": false,
   "mqtt": {
-    "host": "127.0.0.1",
+    "host": "192.168.88.100",
     "port": 1883
   },
   "kuksa": {
-    "host": "127.0.0.1",
+    "host": "192.168.88.100",
     "port": 55555
   },
-  "ankaios_dashboard_url": "http://127.0.0.1:8084",
-  "dozzle_url": "http://127.0.0.1:8080",
+  "ankaios_dashboard_url": "http://192.168.88.100:8084",
+  "dozzle_url": "http://192.168.88.100:8080",
   "kuksa_observer": {
     "enabled": true,
     "paths": [

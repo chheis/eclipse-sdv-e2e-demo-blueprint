@@ -27,8 +27,14 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "kuksa": {"host": "127.0.0.1", "port": 55555},
     "assume_traffic_when_logs_unavailable": True,
     "require_container_presence_for_active": False,
+    "ankaios_assume_active_when_signal_workloads_up": True,
+    "forced_inactive_connections": ["fms_pipeline", "ankaios_workloads"],
     "ankaios_dashboard_url": "http://127.0.0.1:8084",
     "dozzle_url": "http://127.0.0.1:8080",
+    "fleet": {
+        "grafana_url": "http://127.0.0.1:3000",
+        "fms_server_url": "http://127.0.0.1:8081",
+    },
     "kuksa_observer": {
         "enabled": True,
         "paths": [
@@ -595,14 +601,22 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
     require_container_presence_for_active = bool(
         config.get("require_container_presence_for_active", False)
     )
+    ankaios_assume_active_when_signal_workloads_up = bool(
+        config.get("ankaios_assume_active_when_signal_workloads_up", True)
+    )
     observer_cfg = config.get("kuksa_observer", {})
     if not isinstance(observer_cfg, dict):
         observer_cfg = {}
+    fleet_cfg = config.get("fleet", {})
+    if not isinstance(fleet_cfg, dict):
+        fleet_cfg = {}
 
     mqtt = probe_tcp(config["mqtt"]["host"], int(config["mqtt"]["port"]), timeout)
     kuksa = probe_tcp(config["kuksa"]["host"], int(config["kuksa"]["port"]), timeout)
     ank_dashboard = probe_http(config.get("ankaios_dashboard_url", ""), timeout)
     dozzle = probe_http(config.get("dozzle_url", ""), timeout)
+    fleet_grafana = probe_http(value_to_text(fleet_cfg.get("grafana_url"), ""), timeout)
+    fleet_server = probe_http(value_to_text(fleet_cfg.get("fms_server_url"), ""), timeout)
     kuksa_signal_observer = observe_kuksa_signal_activity(
         config["kuksa"]["host"],
         int(config["kuksa"]["port"]),
@@ -648,8 +662,26 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
             mqtt_transfer_active = mqtt["active"] and (kuksa["active"] or bool(grouped.get("mqtt_bridge")))
             databroker_signals_active = kuksa["active"]
 
-    fms_active = bool(grouped.get("fms_forwarder")) and bool(grouped.get("grafana"))
+    fms_container_ok = bool(grouped.get("fms_forwarder")) and bool(grouped.get("grafana"))
+    fms_endpoint_ok = bool(fleet_grafana.get("active")) or bool(fleet_server.get("active"))
+    if require_container_presence_for_active:
+        fms_active = fms_container_ok
+    else:
+        if container_inventory_available:
+            fms_active = fms_container_ok or (fms_endpoint_ok and kuksa["active"])
+        else:
+            fms_active = fms_endpoint_ok and kuksa["active"]
+
     ankaios_active = bool(grouped.get("ankaios")) or bool(ank_dashboard["active"]) or bool(ank_cli["available"])
+    if (
+        not ankaios_active
+        and not require_container_presence_for_active
+        and ankaios_assume_active_when_signal_workloads_up
+        and mqtt_transfer_active
+        and databroker_signals_active
+    ):
+        ankaios_active = True
+
     dozzle_active = bool(grouped.get("dozzle")) or bool(dozzle["active"])
 
     bridge_traffic = activity_has_traffic(bridge_logs)
@@ -687,6 +719,11 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
     can_feedback_traffic = feedback_traffic_from_observer or databroker_traffic or (
         assume_traffic_when_logs_unavailable and databroker_signals_active and databroker_logs_missing
     )
+    forced_inactive_connections = set(ensure_string_list(config.get("forced_inactive_connections")))
+    if "fms_pipeline" in forced_inactive_connections:
+        fms_active = False
+    if "ankaios_workloads" in forced_inactive_connections:
+        ankaios_active = False
 
     return {
         "timestamp": utc_now_iso(),
@@ -695,6 +732,8 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
             "kuksa": kuksa,
             "ankaios_dashboard": ank_dashboard,
             "dozzle": dozzle,
+            "fleet_grafana": fleet_grafana,
+            "fleet_server": fleet_server,
         },
         "dashboards": {
             "ankaios": {
