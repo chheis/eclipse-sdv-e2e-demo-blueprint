@@ -26,6 +26,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "mqtt": {"host": "127.0.0.1", "port": 1883},
     "kuksa": {"host": "127.0.0.1", "port": 55555},
     "assume_traffic_when_logs_unavailable": True,
+    "require_container_presence_for_active": False,
     "ankaios_dashboard_url": "http://127.0.0.1:8084",
     "dozzle_url": "http://127.0.0.1:8080",
     "kuksa_observer": {
@@ -591,6 +592,9 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
     timeout = float(config.get("probe_timeout_seconds", 1.2))
     window = int(config.get("log_window_seconds", 45))
     assume_traffic_when_logs_unavailable = bool(config.get("assume_traffic_when_logs_unavailable", True))
+    require_container_presence_for_active = bool(
+        config.get("require_container_presence_for_active", False)
+    )
     observer_cfg = config.get("kuksa_observer", {})
     if not isinstance(observer_cfg, dict):
         observer_cfg = {}
@@ -617,6 +621,8 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
         else:
             grouped[key] = []
 
+    container_inventory_available = len(containers) > 0
+
     bridge_container = grouped.get("mqtt_bridge", [None])[0] if grouped.get("mqtt_bridge") else None
     databroker_container = (
         grouped.get("kuksa_databroker", [None])[0] if grouped.get("kuksa_databroker") else None
@@ -626,8 +632,21 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
     databroker_logs = collect_recent_logs(databroker_container, window)
     ank_cli = try_query_ank_workloads()
 
-    mqtt_transfer_active = mqtt["active"] and bool(grouped.get("mqtt_bridge")) and bool(grouped.get("mqtt_broker"))
-    databroker_signals_active = kuksa["active"] and bool(grouped.get("can_provider"))
+    mqtt_container_ok = bool(grouped.get("mqtt_bridge")) and bool(grouped.get("mqtt_broker"))
+    can_container_ok = bool(grouped.get("can_provider"))
+
+    if require_container_presence_for_active:
+        mqtt_transfer_active = mqtt["active"] and mqtt_container_ok
+        databroker_signals_active = kuksa["active"] and can_container_ok
+    else:
+        # In containerized website deployments runtime inventory may be unavailable.
+        # Do not force container-presence gating in that case.
+        if container_inventory_available:
+            mqtt_transfer_active = mqtt["active"] and mqtt_container_ok
+            databroker_signals_active = kuksa["active"] and can_container_ok
+        else:
+            mqtt_transfer_active = mqtt["active"] and (kuksa["active"] or bool(grouped.get("mqtt_bridge")))
+            databroker_signals_active = kuksa["active"]
 
     fms_active = bool(grouped.get("fms_forwarder")) and bool(grouped.get("grafana"))
     ankaios_active = bool(grouped.get("ankaios")) or bool(ank_dashboard["active"]) or bool(ank_cli["available"])
@@ -700,6 +719,10 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
             "databroker": databroker_logs,
             "kuksa_observer": kuksa_signal_observer,
             "ank_cli": ank_cli,
+            "observation_mode": {
+                "container_inventory_available": container_inventory_available,
+                "require_container_presence_for_active": require_container_presence_for_active,
+            },
         },
         "connections": {
             "mqtt_transfer": {
