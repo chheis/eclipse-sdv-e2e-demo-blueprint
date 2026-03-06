@@ -1,0 +1,24 @@
+{
+  "probe_timeout_seconds": 1.2,
+  "log_window_seconds": 45,
+  "mqtt": {
+    "host": "127.0.0.1",
+    "port": 1883
+  },
+  "kuksa": {
+    "host": "127.0.0.1",
+    "port": 55555
+  },
+  "ankaios_dashboard_url": "http://127.0.0.1:8084",
+  "dozzle_url": "http://127.0.0.1:8080",
+  "containers": {
+    "mqtt_broker": ["mosquitto-broker", "mosquitto"],
+    "mqtt_bridge": ["grpc-mqtt-bridge"],
+    "kuksa_databroker": ["kuksa-databroker", "databroker"],
+    "can_provider": ["kuksa-can-provider"],
+    "ankaios": ["ank-server", "ank-agent", "ankaios"],
+    "dozzle": ["dozzle"],
+    "fms_forwarder": ["fms-forwarder"],
+    "grafana": ["grafana"]
+  }
+}

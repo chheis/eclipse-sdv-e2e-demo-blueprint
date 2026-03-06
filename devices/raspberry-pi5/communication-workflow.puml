@@ -10,6 +10,8 @@ participant "Kuksa Databroker" as Kuksa
 participant "Kuksa CAN Provider" as CAN
 participant "Blinker ECU\n(MCU1 LED Control)" as MCU
 participant "VSS Consumers\n(Fleet/UI/CLI)" as Consumers
+participant "AZ3166 Board A\n(ThreadX + OpenSOME/IP)" as AZA
+participant "AZ3166 Board B\n(ThreadX + OpenSOME/IP)" as AZB
 
 == Command path (driver input to actuators) ==
 Driver -> JoystickECU: Move joystick / press button
@@ -29,5 +31,11 @@ Bridge -> Kuksa: Set Vehicle.Driver.Identifier.Subject (string)
 MCU -> CAN: CAN frame BlinkerStatus (ID 289)
 CAN -> Kuksa: Write current values (dbc2val)
 Kuksa -> Consumers: Read/Subscribe signal state
+
+== Enhanced device-to-device path (2x AZ3166 SOME/IP over WiFi) ==
+AZA -> AZB: SOME/IP UDP notification\nservice/event IDs shared\npayload [left,right,brake,button_a,button_b]
+AZB -> AZA: SOME/IP UDP notification\nservice/event IDs shared\npayload [left,right,brake,button_a,button_b]
+AZA -> AZA: Update OLED with remote state\n"SIP LxRxBx AxBx"
+AZB -> AZB: Update OLED with remote state\n"SIP LxRxBx AxBx"
 
 @enduml

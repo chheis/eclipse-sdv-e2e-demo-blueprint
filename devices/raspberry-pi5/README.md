@@ -79,6 +79,22 @@ Use the example Ankaios manifest in `devices/raspberry-pi5/ankaios/vehicle-signa
 
 The manifest uses host networking so the CAN provider can reach the databroker at `localhost:55555`, the MQTT bridge can reach Mosquitto at `localhost:1883`, and Mosquitto listens on `localhost:1883`. Point Arduino MQTT broker IPs to the Raspberry Pi 5 address (default in `mcu2-joystick-input.ino` and `driver-input-ecu-door.ino` is `192.168.88.100`).
 
+## Ankaios dashboard workaround (CLI workload view)
+
+If the Ankaios dashboard is unavailable, use the CLI helper script to retrieve workloads:
+
+```bash
+python3 devices/raspberry-pi5/ank-workloads-cli.py
+```
+
+JSON output for automation:
+
+```bash
+python3 devices/raspberry-pi5/ank-workloads-cli.py --json
+```
+
+The script automatically tries multiple `ank` command variants (with and without `-k`) and prints the first successful result.
+
 ## Build the MQTT bridge image
 
 Build locally on the Raspberry Pi 5 (Podman):
