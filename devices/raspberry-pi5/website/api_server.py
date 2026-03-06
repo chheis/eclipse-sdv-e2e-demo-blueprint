@@ -28,7 +28,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "assume_traffic_when_logs_unavailable": True,
     "require_container_presence_for_active": False,
     "ankaios_assume_active_when_signal_workloads_up": True,
-    "forced_inactive_connections": ["fms_pipeline", "ankaios_workloads"],
+    "forced_inactive_connections": [],
     "ankaios_dashboard_url": "http://127.0.0.1:8084",
     "dozzle_url": "http://127.0.0.1:8080",
     "fleet": {
@@ -720,10 +720,29 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
         assume_traffic_when_logs_unavailable and databroker_signals_active and databroker_logs_missing
     )
     forced_inactive_connections = set(ensure_string_list(config.get("forced_inactive_connections")))
-    if "fms_pipeline" in forced_inactive_connections:
+    fms_forced_inactive = "fms_pipeline" in forced_inactive_connections
+    ankaios_forced_inactive = "ankaios_workloads" in forced_inactive_connections
+
+    if fms_forced_inactive:
         fms_active = False
-    if "ankaios_workloads" in forced_inactive_connections:
+    if ankaios_forced_inactive:
         ankaios_active = False
+
+    ankaios_detail_parts: list[str] = []
+    if ankaios_forced_inactive:
+        ankaios_detail_parts.append("forced inactive by config")
+    else:
+        ankaios_group = grouped.get("ankaios", [])
+        if ankaios_group:
+            ankaios_detail_parts.append(f"{len(ankaios_group)} Ankaios container(s) detected")
+        if bool(ank_dashboard.get("active")):
+            ankaios_detail_parts.append(value_to_text(ank_dashboard.get("detail"), "dashboard reachable"))
+        if bool(ank_cli.get("available")):
+            ankaios_detail_parts.append("workloads queried via ank CLI")
+        elif not ankaios_detail_parts:
+            ankaios_detail_parts.append(value_to_text(ank_cli.get("detail"), "Ankaios not detected"))
+
+    ankaios_detail = "; ".join(part for part in ankaios_detail_parts if part) or "Ankaios not detected"
 
     return {
         "timestamp": utc_now_iso(),
@@ -787,7 +806,7 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
             "ankaios_workloads": {
                 "active": ankaios_active,
                 "traffic_detected": ankaios_active,
-                "detail": "Ankaios control plane and workloads",
+                "detail": ankaios_detail,
             },
             "dozzle_monitoring": {
                 "active": dozzle_active,

@@ -120,12 +120,12 @@ function updateServiceCards(data) {
   );
 
   const ankConn = safeGet(data, "connections.ankaios_workloads", { active: false, traffic_detected: false });
-  const ankCli = safeGet(data, "activity.ank_cli.detail", "no data");
+  const ankDetail = safeGet(data, "connections.ankaios_workloads.detail", safeGet(data, "activity.ank_cli.detail", "no data"));
   const ankState = parseState(ankConn);
   setCardStatus(
     "svc-ankaios",
     ankState === "active" ? "Workloads visible" : ankState === "pending" ? "Reachable, low activity" : "Inactive",
-    ankCli,
+    ankDetail,
     ankState
   );
 
@@ -265,7 +265,7 @@ function buildDemoStatus() {
       databroker_signals: { active: true, traffic_detected: highTraffic || lowTraffic },
       can_feedback: { active: true, traffic_detected: highTraffic },
       fms_pipeline: { active: false, traffic_detected: false },
-      ankaios_workloads: { active: false, traffic_detected: false },
+      ankaios_workloads: { active: false, traffic_detected: false, detail: "Ankaios not detected in demo mode" },
       dozzle_monitoring: { active: true, traffic_detected: true },
     },
   };
