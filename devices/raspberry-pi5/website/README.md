@@ -32,9 +32,33 @@ The website has three views:
 - `styles.css`: styling + animations
 - `app.js`: live polling + rendering logic
 - `api_server.py`: local API server + static host
+- `Dockerfile`: container image for the website server
+- `requirements.txt`: Python dependencies for container/runtime
 - `site-config.json.example`: endpoint/container matching template
 
-## Run on Raspberry Pi 5
+## Run with Ankaios (recommended)
+
+The Ankaios manifest `devices/raspberry-pi5/ankaios/vehicle-signals.yaml` includes a `pi5-demo-website` workload that runs this website on port `8090`.
+
+Build the container image locally on Pi5:
+
+```bash
+podman build -t localhost/pi5-demo-website:latest devices/raspberry-pi5/website
+```
+
+Apply manifest:
+
+```bash
+ank -k apply devices/raspberry-pi5/ankaios/vehicle-signals.yaml
+```
+
+Open:
+
+```text
+http://<pi5-ip>:8090
+```
+
+## Run standalone on Raspberry Pi 5
 
 1. Go to the website folder:
 

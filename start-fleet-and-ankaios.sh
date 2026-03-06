@@ -12,12 +12,15 @@ DOZZLE_IMAGE="${DOZZLE_IMAGE:-amir20/dozzle:latest}"
 DOZZLE_CONTAINER_NAME="${DOZZLE_CONTAINER_NAME:-dozzle}"
 DOZZLE_PORT="${DOZZLE_PORT:-8080}"
 DOZZLE_DOCKER_SOCKET="${DOZZLE_DOCKER_SOCKET:-/var/run/docker.sock}"
-WEBSITE_ENABLED="${WEBSITE_ENABLED:-true}"
+WEBSITE_ENABLED="${WEBSITE_ENABLED:-false}"
 WEBSITE_SERVER_SCRIPT="${WEBSITE_SERVER_SCRIPT:-${SCRIPT_DIR}/devices/raspberry-pi5/website/api_server.py}"
 WEBSITE_HOST="${WEBSITE_HOST:-0.0.0.0}"
 WEBSITE_PORT="${WEBSITE_PORT:-8090}"
 WEBSITE_PID_FILE="${WEBSITE_PID_FILE:-/tmp/ee-demo-website-server.pid}"
 WEBSITE_LOG_FILE="${WEBSITE_LOG_FILE:-/tmp/ee-demo-website-server.log}"
+WEBSITE_CONTAINER_BUILD="${WEBSITE_CONTAINER_BUILD:-true}"
+WEBSITE_CONTAINER_IMAGE="${WEBSITE_CONTAINER_IMAGE:-localhost/pi5-demo-website:latest}"
+WEBSITE_CONTAINER_CONTEXT="${WEBSITE_CONTAINER_CONTEXT:-${SCRIPT_DIR}/devices/raspberry-pi5/website}"
 
 log() {
   printf "[start] %s\n" "$*"
@@ -42,6 +45,7 @@ require_file() {
 }
 
 require_cmd docker
+require_cmd podman
 require_cmd ank
 require_file "$FLEET_COMPOSE_FILE"
 require_file "$FLEET_TRANSPORT_COMPOSE_FILE"
@@ -83,6 +87,46 @@ start_dozzle_container() {
   fi
 }
 
+run_podman() {
+  if command -v sudo >/dev/null 2>&1; then
+    sudo podman "$@"
+  else
+    podman "$@"
+  fi
+}
+
+build_website_container_image() {
+  if [ "${WEBSITE_CONTAINER_BUILD}" != "true" ]; then
+    log "Website container build disabled via WEBSITE_CONTAINER_BUILD=${WEBSITE_CONTAINER_BUILD}."
+    return
+  fi
+
+  if [ ! -d "${WEBSITE_CONTAINER_CONTEXT}" ]; then
+    warn "Website container context not found: ${WEBSITE_CONTAINER_CONTEXT}. Skipping build."
+    return
+  fi
+
+  if [ ! -f "${WEBSITE_CONTAINER_CONTEXT}/Dockerfile" ]; then
+    warn "Website Dockerfile not found in: ${WEBSITE_CONTAINER_CONTEXT}. Skipping build."
+    return
+  fi
+
+  log "Building website image '${WEBSITE_CONTAINER_IMAGE}'..."
+  if run_podman build -t "${WEBSITE_CONTAINER_IMAGE}" "${WEBSITE_CONTAINER_CONTEXT}"; then
+    log "Website image build complete: ${WEBSITE_CONTAINER_IMAGE}"
+    return
+  fi
+
+  warn "Website image build failed."
+  if run_podman image exists "${WEBSITE_CONTAINER_IMAGE}"; then
+    warn "Using previously built image: ${WEBSITE_CONTAINER_IMAGE}"
+    return
+  fi
+
+  warn "No usable website image available. Aborting."
+  exit 1
+}
+
 find_python_cmd() {
   if command -v python3 >/dev/null 2>&1; then
     printf "python3"
@@ -101,6 +145,11 @@ start_website_server() {
 
   if [ "${WEBSITE_ENABLED}" != "true" ]; then
     log "Website server disabled via WEBSITE_ENABLED=${WEBSITE_ENABLED}."
+    return
+  fi
+
+  if grep -q "pi5-demo-website" "${ANKAIOS_MANIFEST}" 2>/dev/null; then
+    log "Website workload is defined in Ankaios manifest. Skipping host website server."
     return
   fi
 
@@ -174,6 +223,7 @@ else
 fi
 
 log "Applying Ankaios workload manifest: ${ANKAIOS_MANIFEST}"
+build_website_container_image
 ank -k apply "$ANKAIOS_MANIFEST"
 
 start_website_server

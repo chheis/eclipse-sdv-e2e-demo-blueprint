@@ -43,6 +43,21 @@ workloads:
         - -v
         - /opt/kuksa/can-provider/motorbike-blinker-defaults.json:/config/motorbike-blinker-defaults.json
       commandArgs: ["--config", "/config/can-provider-config.ini"]
+  pi5-demo-website:
+    runtime: podman
+    agent: agent_B
+    restartPolicy: ALWAYS
+    configs:
+      website_config_file: website_config
+    files:
+      - mountPoint: "/app/site-config.json"
+        data: "{{website_config_file}}"
+    runtimeConfig: |
+      image: localhost/pi5-demo-website:latest
+      commandOptions:
+        - --net=host
+        - -v
+        - /var/run/docker.sock:/var/run/docker.sock:ro
 configs:
   mosquitto_config: |
     listener 1883 0.0.0.0
@@ -77,3 +92,54 @@ configs:
             - path: "Vehicle.Driver.Identifier.Subject"
               type: "string"
               jsonPointer: "/Vehicle.Driver.Identifier.Subject"
+  website_config: |
+    {
+      "probe_timeout_seconds": 1.2,
+      "log_window_seconds": 45,
+      "assume_traffic_when_logs_unavailable": true,
+      "mqtt": {
+        "host": "127.0.0.1",
+        "port": 1883
+      },
+      "kuksa": {
+        "host": "127.0.0.1",
+        "port": 55555
+      },
+      "ankaios_dashboard_url": "http://127.0.0.1:8084",
+      "dozzle_url": "http://127.0.0.1:8080",
+      "kuksa_observer": {
+        "enabled": true,
+        "paths": [
+          "Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling",
+          "Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling",
+          "Vehicle.Body.Lights.Brake.IsActive",
+          "Vehicle.Driver.Identifier.Subject"
+        ],
+        "command_paths": [
+          "Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling",
+          "Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling",
+          "Vehicle.Body.Lights.Brake.IsActive",
+          "Vehicle.Driver.Identifier.Subject"
+        ],
+        "feedback_paths": [
+          "Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling",
+          "Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling",
+          "Vehicle.Body.Lights.Brake.IsActive"
+        ],
+        "token": "",
+        "token_file": "",
+        "tls": false,
+        "root_ca": "",
+        "tls_server_name": ""
+      },
+      "containers": {
+        "mqtt_broker": ["mosquitto-broker", "mosquitto"],
+        "mqtt_bridge": ["grpc-mqtt-bridge"],
+        "kuksa_databroker": ["kuksa-databroker", "databroker"],
+        "can_provider": ["kuksa-can-provider"],
+        "ankaios": ["ank-server", "ank-agent", "ankaios"],
+        "dozzle": ["dozzle"],
+        "fms_forwarder": ["fms-forwarder"],
+        "grafana": ["grafana"]
+      }
+    }

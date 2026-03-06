@@ -7,7 +7,7 @@ FLEET_COMPOSE_FILE="${FLEET_COMPOSE_FILE:-${SCRIPT_DIR}/external/fleet-managemen
 FLEET_TRANSPORT_COMPOSE_FILE="${FLEET_TRANSPORT_COMPOSE_FILE:-${SCRIPT_DIR}/external/fleet-management/fms-blueprint-compose-zenoh.yaml}"
 DOZZLE_ENABLED="${DOZZLE_ENABLED:-true}"
 DOZZLE_CONTAINER_NAME="${DOZZLE_CONTAINER_NAME:-dozzle}"
-WEBSITE_ENABLED="${WEBSITE_ENABLED:-true}"
+WEBSITE_ENABLED="${WEBSITE_ENABLED:-false}"
 WEBSITE_SERVER_SCRIPT="${WEBSITE_SERVER_SCRIPT:-${SCRIPT_DIR}/devices/raspberry-pi5/website/api_server.py}"
 WEBSITE_PID_FILE="${WEBSITE_PID_FILE:-/tmp/ee-demo-website-server.pid}"
 
