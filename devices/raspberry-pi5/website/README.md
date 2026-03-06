@@ -40,6 +40,8 @@ The website has three views:
 
 The Ankaios manifest `devices/raspberry-pi5/ankaios/vehicle-signals.yaml` includes a `pi5-demo-website` workload that runs this website on port `8090`.
 
+When you start the stack via `start-fleet-and-ankaios.sh`, the script reads `devices/raspberry-pi5/website/site-config.json` and injects its contents into the website workload before `ank apply`. If that file does not exist, it falls back to `site-config.json.example`.
+
 Build the container image locally on Pi5:
 
 ```bash
@@ -51,6 +53,8 @@ Apply manifest:
 ```bash
 ank -k apply devices/raspberry-pi5/ankaios/vehicle-signals.yaml
 ```
+
+If you apply the manifest manually, it uses the `website_config` block embedded in `vehicle-signals.yaml`. To keep the website container aligned with your local JSON config, prefer `start-fleet-and-ankaios.sh` or update the embedded block as well.
 
 Open:
 

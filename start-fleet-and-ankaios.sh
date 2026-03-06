@@ -21,6 +21,8 @@ WEBSITE_LOG_FILE="${WEBSITE_LOG_FILE:-/tmp/ee-demo-website-server.log}"
 WEBSITE_CONTAINER_BUILD="${WEBSITE_CONTAINER_BUILD:-true}"
 WEBSITE_CONTAINER_IMAGE="${WEBSITE_CONTAINER_IMAGE:-localhost/pi5-demo-website:latest}"
 WEBSITE_CONTAINER_CONTEXT="${WEBSITE_CONTAINER_CONTEXT:-${SCRIPT_DIR}/devices/raspberry-pi5/website}"
+WEBSITE_CONFIG_FILE="${WEBSITE_CONFIG_FILE:-${WEBSITE_CONTAINER_CONTEXT}/site-config.json}"
+WEBSITE_CONFIG_EXAMPLE_FILE="${WEBSITE_CONFIG_EXAMPLE_FILE:-${WEBSITE_CONTAINER_CONTEXT}/site-config.json.example}"
 
 log() {
   printf "[start] %s\n" "$*"
@@ -127,6 +129,72 @@ build_website_container_image() {
   exit 1
 }
 
+resolve_website_config_file() {
+  if [ -f "${WEBSITE_CONFIG_FILE}" ]; then
+    printf "%s\n" "${WEBSITE_CONFIG_FILE}"
+    return
+  fi
+
+  if [ -f "${WEBSITE_CONFIG_EXAMPLE_FILE}" ]; then
+    warn "Website config not found at ${WEBSITE_CONFIG_FILE}. Falling back to ${WEBSITE_CONFIG_EXAMPLE_FILE}."
+    printf "%s\n" "${WEBSITE_CONFIG_EXAMPLE_FILE}"
+    return
+  fi
+
+  warn "No website config file found. Checked ${WEBSITE_CONFIG_FILE} and ${WEBSITE_CONFIG_EXAMPLE_FILE}."
+  return 1
+}
+
+render_ankaios_manifest() {
+  local source_manifest="$1"
+  local config_file="$2"
+  local rendered_manifest
+
+  rendered_manifest="$(mktemp)"
+
+  if ! awk -v cfg="${config_file}" '
+    BEGIN {
+      injected = 0
+      skipping = 0
+    }
+
+    skipping == 1 {
+      if ($0 ~ /^  [^[:space:]][^:]*: *[|>]?$/ && $0 !~ /^  website_config: *[|>]$/) {
+        skipping = 0
+      } else {
+        next
+      }
+    }
+
+    $0 ~ /^  website_config: *[|>]$/ {
+      print
+      while ((getline line < cfg) > 0) {
+        print "    " line
+      }
+      close(cfg)
+      injected = 1
+      skipping = 1
+      next
+    }
+
+    {
+      print
+    }
+
+    END {
+      if (injected != 1) {
+        exit 42
+      }
+    }
+  ' "${source_manifest}" > "${rendered_manifest}"; then
+    rm -f "${rendered_manifest}"
+    warn "Failed to render Ankaios manifest with website config from ${config_file}."
+    return 1
+  fi
+
+  printf "%s\n" "${rendered_manifest}"
+}
+
 find_python_cmd() {
   if command -v python3 >/dev/null 2>&1; then
     printf "python3"
@@ -224,7 +292,11 @@ fi
 
 log "Applying Ankaios workload manifest: ${ANKAIOS_MANIFEST}"
 build_website_container_image
-ank -k apply "$ANKAIOS_MANIFEST"
+WEBSITE_CONFIG_RESOLVED="$(resolve_website_config_file)"
+RENDERED_ANKAIOS_MANIFEST="$(render_ankaios_manifest "${ANKAIOS_MANIFEST}" "${WEBSITE_CONFIG_RESOLVED}")"
+trap 'if [ -n "${RENDERED_ANKAIOS_MANIFEST:-}" ] && [ -f "${RENDERED_ANKAIOS_MANIFEST}" ]; then rm -f "${RENDERED_ANKAIOS_MANIFEST}"; fi' EXIT
+log "Using website config from: ${WEBSITE_CONFIG_RESOLVED}"
+ank -k apply "${RENDERED_ANKAIOS_MANIFEST}"
 
 start_website_server
 
