@@ -54,6 +54,8 @@ dtoverlay=mcp2515-can0,oscillator=12000000,interrupt=25,spimaxfrequency=2000000
       4. "motorbike-blinker-defaults.json"
 - Maybe use this to init the network: ````docker swarm init ````  
 - start the workload from eclipse-sdv-e2e-demo-blueprint root folder: ````sudo ./start-fleet-and-ankaios.sh```` 
+- the startup script also starts **Dozzle** (default `http://<pi-ip>:8080`) for container log/health visibility
+- the startup script also starts the **Pi5 website server** (default `http://<pi-ip>:8090`)
 
 Hint: First Run takes a long time as all images for fleet-management blueprint must be build locally!
 
