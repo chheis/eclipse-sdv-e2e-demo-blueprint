@@ -1,6 +1,7 @@
 {
   "probe_timeout_seconds": 1.2,
   "log_window_seconds": 45,
+  "assume_traffic_when_logs_unavailable": true,
   "mqtt": {
     "host": "127.0.0.1",
     "port": 1883
@@ -11,6 +12,31 @@
   },
   "ankaios_dashboard_url": "http://127.0.0.1:8084",
   "dozzle_url": "http://127.0.0.1:8080",
+  "kuksa_observer": {
+    "enabled": true,
+    "paths": [
+      "Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling",
+      "Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling",
+      "Vehicle.Body.Lights.Brake.IsActive",
+      "Vehicle.Driver.Identifier.Subject"
+    ],
+    "command_paths": [
+      "Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling",
+      "Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling",
+      "Vehicle.Body.Lights.Brake.IsActive",
+      "Vehicle.Driver.Identifier.Subject"
+    ],
+    "feedback_paths": [
+      "Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling",
+      "Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling",
+      "Vehicle.Body.Lights.Brake.IsActive"
+    ],
+    "token": "",
+    "token_file": "",
+    "tls": false,
+    "root_ca": "",
+    "tls_server_name": ""
+  },
   "containers": {
     "mqtt_broker": ["mosquitto-broker", "mosquitto"],
     "mqtt_bridge": ["grpc-mqtt-bridge"],

@@ -82,6 +82,9 @@ The backend (`api_server.py`) polls:
   - `docker ps`
 - Optional recent activity hints from logs
   - `podman logs` / `docker logs` for bridge and databroker containers
+- Optional direct signal observation via Kuksa Python client
+  - reads configured VSS paths from Databroker (`kuksa_observer` in `site-config.json`)
+  - marks command/feedback flows active when signal changes are observed
 - Optional Ankaios workload query
   - attempts `ank` CLI commands (version-dependent)
 
