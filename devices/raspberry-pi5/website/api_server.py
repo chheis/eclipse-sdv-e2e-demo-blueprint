@@ -136,6 +136,28 @@ def probe_http(url: str, timeout_seconds: float) -> dict[str, Any]:
         }
 
 
+def value_to_text(value: Any, default: str = "") -> str:
+    if value is None:
+        return default
+    if isinstance(value, str):
+        text = value.strip()
+        return text if text else default
+    if isinstance(value, (int, float, bool)):
+        return str(value)
+    if isinstance(value, (list, tuple, set)):
+        parts = [value_to_text(part, "").strip() for part in value]
+        parts = [part for part in parts if part]
+        if parts:
+            return ",".join(parts)
+        return default
+    if isinstance(value, dict):
+        try:
+            return json.dumps(value, separators=(",", ":"))
+        except (TypeError, ValueError):
+            return default
+    return str(value)
+
+
 def list_containers(runtime: str) -> list[dict[str, Any]]:
     if not shutil.which(runtime):
         return []
@@ -154,11 +176,11 @@ def list_containers(runtime: str) -> list[dict[str, Any]]:
         except json.JSONDecodeError:
             continue
 
-        name = raw.get("Names") or raw.get("Name") or "unknown"
-        image = raw.get("Image") or "unknown"
-        container_id = raw.get("ID") or raw.get("Id") or ""
-        state = raw.get("State") or ""
-        status = raw.get("Status") or state or "unknown"
+        name = value_to_text(raw.get("Names") or raw.get("Name"), "unknown")
+        image = value_to_text(raw.get("Image"), "unknown")
+        container_id = value_to_text(raw.get("ID") or raw.get("Id"), "")
+        state = value_to_text(raw.get("State"), "")
+        status = value_to_text(raw.get("Status"), state or "unknown")
 
         containers.append(
             {
@@ -194,8 +216,15 @@ def collect_recent_logs(
     if not container:
         return {"lines": None, "keyword_hits": None, "detail": "container not found"}
 
-    runtime = container["runtime"]
-    name = container["name"]
+    runtime = value_to_text(container.get("runtime"), "")
+    name = value_to_text(container.get("name"), "")
+    if not runtime or not name:
+        return {
+            "lines": None,
+            "keyword_hits": None,
+            "detail": "container runtime/name unavailable",
+        }
+
     result = run_command([runtime, "logs", "--since", f"{seconds_window}s", name], timeout_seconds=5)
     if not result["ok"]:
         return {
