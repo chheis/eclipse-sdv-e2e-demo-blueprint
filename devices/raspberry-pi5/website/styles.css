@@ -212,6 +212,28 @@ a {
   font-size: 0.9rem;
 }
 
+.node-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.node-logo {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  border-radius: 0.36rem;
+  background: rgba(245, 252, 255, 0.95);
+  border: 1px solid rgba(12, 42, 56, 0.45);
+  padding: 0.15rem;
+  flex: 0 0 auto;
+}
+
+.node-logo-wide {
+  width: 52px;
+}
+
 .node p {
   margin: 0.3rem 0 0;
   color: #cfdee2;
@@ -248,6 +270,15 @@ a {
 
 .node-small p {
   font-size: 0.7rem;
+}
+
+.node-small .node-logo {
+  width: 30px;
+  height: 30px;
+}
+
+.node-small .node-logo-wide {
+  width: 46px;
 }
 
 .node-large {
@@ -288,19 +319,19 @@ a {
 
 .ankaios {
   --node-width: 15%;
-  left: 11%;
-  top: 9%;
+  left: 36.5%;
+  top: 76%;
 }
 
 .csv-provider {
   --node-width: 13.5%;
-  left: 57%;
+  left: 36.75%;
   top: 8%;
 }
 
 .fms-forwarder {
   --node-width: 14%;
-  left: 72%;
+  left: 52%;
   top: 8%;
 }
 
@@ -312,14 +343,125 @@ a {
 
 .fms {
   --node-width: 18%;
-  left: 72%;
-  top: 24%;
+  left: 67%;
+  top: 8%;
 }
 
 .dozzle {
   --node-width: 18%;
   left: 60%;
   top: 76%;
+}
+
+.threadx-1 {
+  --node-width: 14%;
+  left: 15%;
+  top: 59%;
+  min-height: 96px;
+}
+
+.threadx-2 {
+  --node-width: 14%;
+  left: 15%;
+  top: 75%;
+  min-height: 96px;
+}
+
+.threadx-1 h3,
+.threadx-2 h3 {
+  font-size: 0.76rem;
+  line-height: 1.25;
+}
+
+.blueprints-badge {
+  --node-width: 12%;
+  left: 86%;
+  top: 76%;
+  min-height: 70px;
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.blueprints-badge p {
+  margin: 0;
+  font-size: 0.64rem;
+  text-align: center;
+}
+
+.blueprints-badge .node-logo {
+  width: 70%;
+  height: auto;
+  border-radius: 0.24rem;
+  padding: 0.1rem;
+}
+
+.conn-label {
+  position: absolute;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  padding: 0.15rem 0.32rem;
+  border: 1px solid rgba(132, 173, 189, 0.62);
+  border-radius: 999px;
+  background: rgba(4, 23, 35, 0.78);
+  color: #dbedf2;
+  font-size: 0.65rem;
+  line-height: 1.2;
+}
+
+.conn-label img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.conn-label.active {
+  border-color: var(--ok);
+}
+
+.conn-label.pending {
+  border-color: var(--warn);
+}
+
+.conn-label.inactive {
+  border-color: #815460;
+  opacity: 0.85;
+}
+
+.zenoh-label-forwarder {
+  left: 54%;
+  top: 20%;
+}
+
+.zenoh-label-consumer {
+  left: 84%;
+  top: 20%;
+}
+
+.zenoh-label-server {
+  left: 70%;
+  top: 20%;
+}
+
+.grpc-label-csv-kuksa {
+  left: 51%;
+  top: 28.5%;
+}
+
+.mqtt-label-threadx-left {
+  left: 24%;
+  top: 52%;
+}
+
+.someip-label-threadx {
+  left: 20%;
+  top: 71%;
+  font-weight: 600;
 }
 
 .legend {
@@ -572,6 +714,11 @@ td {
   .node p {
     font-size: 0.72rem;
   }
+
+  .threadx-1 h3,
+  .threadx-2 h3 {
+    font-size: 0.72rem;
+  }
 }
 
 @media (max-width: 760px) {
@@ -595,6 +742,10 @@ td {
   }
 
   .link-layer {
+    display: none;
+  }
+
+  .conn-label {
     display: none;
   }
 
