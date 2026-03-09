@@ -56,6 +56,7 @@ workloads:
       image: localhost/pi5-demo-website:latest
       commandOptions:
         - --net=host
+        - --privileged
         - -v
         - /var/run/docker.sock:/var/run/docker.sock:ro
 configs:
@@ -95,6 +96,7 @@ configs:
   website_config: |
     {
       "probe_timeout_seconds": 1.2,
+      "status_cache_seconds": 5.0,
       "log_window_seconds": 45,
       "assume_traffic_when_logs_unavailable": true,
       "require_container_presence_for_active": false,
@@ -108,6 +110,12 @@ configs:
       },
       "ankaios_dashboard_url": "http://127.0.0.1:8084",
       "dozzle_url": "http://127.0.0.1:8080",
+      "can_observer": {
+        "enabled": true,
+        "interface": "can0",
+        "sample_timeout_seconds": 0.8,
+        "min_poll_interval_seconds": 10.0
+      },
       "kuksa_observer": {
         "enabled": true,
         "paths": [

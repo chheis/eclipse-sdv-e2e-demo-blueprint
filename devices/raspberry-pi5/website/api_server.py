@@ -9,12 +9,13 @@ import shutil
 import socket
 import subprocess
 import threading
+import time
 from datetime import datetime, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parent
@@ -22,6 +23,7 @@ CONFIG_FILE = ROOT / "site-config.json"
 
 DEFAULT_CONFIG: dict[str, Any] = {
     "probe_timeout_seconds": 1.2,
+    "status_cache_seconds": 5.0,
     "log_window_seconds": 45,
     "mqtt": {"host": "127.0.0.1", "port": 1883},
     "kuksa": {"host": "127.0.0.1", "port": 55555},
@@ -31,6 +33,12 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "forced_inactive_connections": [],
     "ankaios_dashboard_url": "http://127.0.0.1:8084",
     "dozzle_url": "http://127.0.0.1:8080",
+    "can_observer": {
+        "enabled": True,
+        "interface": "can0",
+        "sample_timeout_seconds": 0.8,
+        "min_poll_interval_seconds": 10.0,
+    },
     "fleet": {
         "grafana_url": "http://127.0.0.1:3000",
         "fms_server_url": "http://127.0.0.1:8081",
@@ -80,6 +88,11 @@ class StatusError(Exception):
 _KUKSA_OBSERVER_LOCK = threading.Lock()
 _KUKSA_LAST_VALUES: dict[str, Any] = {}
 _KUKSA_LAST_CHANGE_TS: float | None = None
+_CAN_OBSERVER_LOCK = threading.Lock()
+_CAN_OBSERVER_CACHE: dict[str, Any] = {}
+_STATUS_CACHE_LOCK = threading.Lock()
+_STATUS_CACHE_PAYLOAD: dict[str, Any] | None = None
+_STATUS_CACHE_TS: float | None = None
 
 
 def deep_merge(base: dict[str, Any], update: dict[str, Any]) -> dict[str, Any]:
@@ -423,6 +436,128 @@ def observe_kuksa_signal_activity(
     }
 
 
+def sample_socketcan_activity(interface: str, sample_timeout_seconds: float) -> dict[str, Any]:
+    candump_path = shutil.which("candump")
+    checked_at = utc_now_iso()
+    if not candump_path:
+        return {
+            "available": False,
+            "active": False,
+            "checked_at": checked_at,
+            "interface": interface,
+            "detail": "candump not found",
+            "sample_window_seconds": sample_timeout_seconds,
+            "frames_seen": 0,
+        }
+
+    try:
+        completed = subprocess.run(
+            [candump_path, "-n", "1", interface],
+            capture_output=True,
+            text=True,
+            timeout=sample_timeout_seconds,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return {
+            "available": True,
+            "active": False,
+            "checked_at": checked_at,
+            "interface": interface,
+            "detail": f"no CAN frames observed on {interface} in {sample_timeout_seconds:.1f}s",
+            "sample_window_seconds": sample_timeout_seconds,
+            "frames_seen": 0,
+        }
+    except OSError as exc:
+        return {
+            "available": False,
+            "active": False,
+            "checked_at": checked_at,
+            "interface": interface,
+            "detail": f"candump start failed ({exc})",
+            "sample_window_seconds": sample_timeout_seconds,
+            "frames_seen": 0,
+        }
+
+    combined = f"{completed.stdout}\n{completed.stderr}".strip()
+    lines = [line for line in combined.splitlines() if line.strip()]
+    if completed.returncode == 0:
+        return {
+            "available": True,
+            "active": bool(lines),
+            "checked_at": checked_at,
+            "interface": interface,
+            "detail": (
+                f"observed {len(lines)} CAN frame(s) on {interface}"
+                if lines
+                else f"candump returned without CAN frames on {interface}"
+            ),
+            "sample_window_seconds": sample_timeout_seconds,
+            "frames_seen": len(lines),
+        }
+
+    detail = value_to_text(combined, "") or f"candump exited with {completed.returncode}"
+    return {
+        "available": False,
+        "active": False,
+        "checked_at": checked_at,
+        "interface": interface,
+        "detail": f"candump failed on {interface} ({detail})",
+        "sample_window_seconds": sample_timeout_seconds,
+        "frames_seen": 0,
+    }
+
+
+def observe_socketcan_activity(observer_cfg: dict[str, Any]) -> dict[str, Any]:
+    if not bool(observer_cfg.get("enabled", True)):
+        return {
+            "available": False,
+            "active": False,
+            "checked_at": None,
+            "interface": value_to_text(observer_cfg.get("interface"), "can0"),
+            "detail": "socketcan observer disabled",
+            "sample_window_seconds": None,
+            "frames_seen": 0,
+            "cached": False,
+        }
+
+    interface = value_to_text(observer_cfg.get("interface"), "can0")
+    try:
+        sample_timeout_seconds = max(float(observer_cfg.get("sample_timeout_seconds", 0.8)), 0.1)
+    except (TypeError, ValueError):
+        sample_timeout_seconds = 0.8
+    try:
+        min_poll_interval_seconds = max(float(observer_cfg.get("min_poll_interval_seconds", 10.0)), 1.0)
+    except (TypeError, ValueError):
+        min_poll_interval_seconds = 10.0
+
+    cache_key = f"{interface}|{sample_timeout_seconds:.3f}|{min_poll_interval_seconds:.3f}"
+    now_monotonic = time.monotonic()
+
+    with _CAN_OBSERVER_LOCK:
+        cached = _CAN_OBSERVER_CACHE.get(cache_key)
+        if isinstance(cached, dict):
+            checked_at_monotonic = cached.get("checked_at_monotonic")
+            sample = cached.get("sample")
+            if (
+                isinstance(checked_at_monotonic, (int, float))
+                and isinstance(sample, dict)
+                and (now_monotonic - checked_at_monotonic) < min_poll_interval_seconds
+            ):
+                cached_sample = dict(sample)
+                cached_sample["cached"] = True
+                return cached_sample
+
+        sample = sample_socketcan_activity(interface, sample_timeout_seconds)
+        sample["cached"] = False
+        _CAN_OBSERVER_CACHE.clear()
+        _CAN_OBSERVER_CACHE[cache_key] = {
+            "checked_at_monotonic": now_monotonic,
+            "sample": dict(sample),
+        }
+        return sample
+
+
 def list_containers(runtime: str) -> list[dict[str, Any]]:
     if not shutil.which(runtime):
         return []
@@ -607,6 +742,9 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
     observer_cfg = config.get("kuksa_observer", {})
     if not isinstance(observer_cfg, dict):
         observer_cfg = {}
+    can_observer_cfg = config.get("can_observer", {})
+    if not isinstance(can_observer_cfg, dict):
+        can_observer_cfg = {}
     fleet_cfg = config.get("fleet", {})
     if not isinstance(fleet_cfg, dict):
         fleet_cfg = {}
@@ -624,6 +762,7 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
         window,
         observer_cfg,
     )
+    can_bus_activity = observe_socketcan_activity(can_observer_cfg)
 
     containers = list_containers("podman") + list_containers("docker")
     container_patterns = config.get("containers", {})
@@ -693,6 +832,7 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
     observer_recent = bool(kuksa_signal_observer.get("recent_change"))
     observer_values_count = kuksa_signal_observer.get("values_count")
     observer_has_values = isinstance(observer_values_count, int) and observer_values_count > 0
+    can_bus_traffic = bool(can_bus_activity.get("active"))
 
     default_observer_paths = ensure_string_list(observer_cfg.get("paths"))
     command_paths = ensure_string_list(observer_cfg.get("command_paths")) or default_observer_paths
@@ -716,7 +856,8 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
     databroker_signals_traffic = databroker_traffic_from_observer or databroker_traffic or bridge_traffic or (
         assume_traffic_when_logs_unavailable and databroker_signals_active and databroker_logs_missing
     )
-    can_feedback_traffic = feedback_traffic_from_observer or databroker_traffic or (
+    databroker_signals_traffic = databroker_signals_traffic or can_bus_traffic
+    can_feedback_traffic = feedback_traffic_from_observer or databroker_traffic or can_bus_traffic or (
         assume_traffic_when_logs_unavailable and databroker_signals_active and databroker_logs_missing
     )
     forced_inactive_connections = set(ensure_string_list(config.get("forced_inactive_connections")))
@@ -776,6 +917,7 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
             "bridge": bridge_logs,
             "databroker": databroker_logs,
             "kuksa_observer": kuksa_signal_observer,
+            "can_bus": can_bus_activity,
             "ank_cli": ank_cli,
             "observation_mode": {
                 "container_inventory_available": container_inventory_available,
@@ -791,12 +933,20 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
             "databroker_signals": {
                 "active": databroker_signals_active,
                 "traffic_detected": databroker_signals_traffic,
-                "detail": "Kuksa Databroker <-> CAN Provider",
+                "detail": (
+                    f"Kuksa Databroker <-> CAN Provider; {value_to_text(can_bus_activity.get('detail'), '')}"
+                    if value_to_text(can_bus_activity.get("detail"), "")
+                    else "Kuksa Databroker <-> CAN Provider"
+                ),
             },
             "can_feedback": {
                 "active": databroker_signals_active,
                 "traffic_detected": can_feedback_traffic,
-                "detail": "Blinker ECU status feedback to VSS",
+                "detail": (
+                    f"Blinker ECU status feedback to VSS; {value_to_text(can_bus_activity.get('detail'), '')}"
+                    if value_to_text(can_bus_activity.get("detail"), "")
+                    else "Blinker ECU status feedback to VSS"
+                ),
             },
             "fms_pipeline": {
                 "active": fms_active,
@@ -815,6 +965,37 @@ def build_status(config: dict[str, Any]) -> dict[str, Any]:
             },
         },
     }
+
+
+def get_status(config: dict[str, Any], force_refresh: bool = False) -> dict[str, Any]:
+    global _STATUS_CACHE_PAYLOAD, _STATUS_CACHE_TS
+
+    try:
+        cache_seconds = max(float(config.get("status_cache_seconds", 5.0)), 0.0)
+    except (TypeError, ValueError):
+        cache_seconds = 5.0
+
+    if force_refresh or cache_seconds <= 0:
+        payload = build_status(config)
+        with _STATUS_CACHE_LOCK:
+            _STATUS_CACHE_PAYLOAD = payload
+            _STATUS_CACHE_TS = time.monotonic()
+        return payload
+
+    now_monotonic = time.monotonic()
+    with _STATUS_CACHE_LOCK:
+        if (
+            _STATUS_CACHE_PAYLOAD is not None
+            and isinstance(_STATUS_CACHE_TS, (int, float))
+            and (now_monotonic - _STATUS_CACHE_TS) < cache_seconds
+        ):
+            return _STATUS_CACHE_PAYLOAD
+
+    payload = build_status(config)
+    with _STATUS_CACHE_LOCK:
+        _STATUS_CACHE_PAYLOAD = payload
+        _STATUS_CACHE_TS = now_monotonic
+    return payload
 
 
 class DemoHTTPServer(ThreadingHTTPServer):
@@ -844,7 +1025,9 @@ class DemoHandler(SimpleHTTPRequestHandler):
         parsed = urlparse(self.path)
 
         if parsed.path == "/api/status":
-            payload = build_status(self.server.config)  # type: ignore[attr-defined]
+            query = parse_qs(parsed.query)
+            force_refresh = value_to_text(query.get("fresh"), "").lower() in {"1", "true", "yes"}
+            payload = get_status(self.server.config, force_refresh=force_refresh)  # type: ignore[attr-defined]
             self.send_json(payload)
             return
 

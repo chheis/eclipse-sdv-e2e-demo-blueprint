@@ -1,5 +1,5 @@
 const STATUS_ENDPOINT = "/api/status";
-const POLL_INTERVAL_MS = 1000;
+const POLL_INTERVAL_MS = 5000;
 
 let demoTick = 0;
 
@@ -271,17 +271,18 @@ function buildDemoStatus() {
   };
 }
 
-async function fetchStatus() {
-  const response = await fetch(STATUS_ENDPOINT, { cache: "no-store" });
+async function fetchStatus(forceRefresh = false) {
+  const endpoint = forceRefresh ? `${STATUS_ENDPOINT}?fresh=1` : STATUS_ENDPOINT;
+  const response = await fetch(endpoint, { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`status endpoint returned ${response.status}`);
   }
   return response.json();
 }
 
-async function pollStatus() {
+async function pollStatus(forceRefresh = false) {
   try {
-    const data = await fetchStatus();
+    const data = await fetchStatus(forceRefresh);
     applyStatus(data, false);
   } catch (error) {
     const fallback = buildDemoStatus();
@@ -310,7 +311,7 @@ function installRefreshButton() {
   const button = byId("refresh-btn");
   if (!button) return;
   button.addEventListener("click", () => {
-    pollStatus();
+    pollStatus(true);
   });
 }
 

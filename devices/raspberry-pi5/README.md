@@ -57,6 +57,7 @@ dtoverlay=mcp2515-can0,oscillator=12000000,interrupt=25,spimaxfrequency=2000000
 - the startup script also starts **Dozzle** (default `http://<pi-ip>:8080`) for container log/health visibility
 - the startup script builds the **Pi5 website container image** and the Ankaios manifest starts `pi5-demo-website` on `http://<pi-ip>:8090`
 - for the website workload config, edit `devices/raspberry-pi5/website/site-config.json`; the startup script injects that JSON into the Ankaios website workload before applying the manifest
+- the website workload now samples SocketCAN activity with `candump` on `can0`; the probe is throttled in the backend, and the website container runs privileged so it can access the CAN interface
 - optional legacy host-process mode for website can be enabled with `WEBSITE_ENABLED=true`
 
 Hint: First Run takes a long time as all images for fleet-management blueprint must be build locally!

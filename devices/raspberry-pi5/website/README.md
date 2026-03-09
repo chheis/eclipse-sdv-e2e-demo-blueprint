@@ -48,6 +48,14 @@ Build the container image locally on Pi5:
 podman build -t localhost/pi5-demo-website:latest devices/raspberry-pi5/website
 ```
 
+Build the website image locally on Pi5 with Docker:
+
+```bash
+docker build -t pi5-demo-website:latest devices/raspberry-pi5/website
+```
+
+If you want to use the image with the Ankaios workload from `vehicle-signals.yaml`, prefer the Podman build above, because that workload runs with Podman and expects `localhost/pi5-demo-website:latest`.
+
 Apply manifest:
 
 ```bash
@@ -81,6 +89,8 @@ cp site-config.json.example site-config.json
    - `kuksa.host` / `kuksa.port`
    - `ankaios_dashboard_url`
    - `dozzle_url`
+   - `status_cache_seconds` to reduce backend probe frequency
+   - `can_observer.interface` / `can_observer.min_poll_interval_seconds`
    - container name patterns under `containers`
 
 4. Start the website server:
@@ -113,6 +123,13 @@ The backend (`api_server.py`) polls:
 - Optional direct signal observation via Kuksa Python client
   - reads configured VSS paths from Databroker (`kuksa_observer` in `site-config.json`)
   - marks command/feedback flows active when signal changes are observed
+- Optional throttled SocketCAN observation via `candump`
+  - samples a single frame on the configured CAN interface (`can_observer.interface`)
+  - caches the result for `can_observer.min_poll_interval_seconds` so `/api/status` polling does not run `candump` every second
+  - requires `can-utils` in the image and privileged container access when running in Podman
+- Whole-status response caching
+  - `status_cache_seconds` caches the full `/api/status` payload to avoid repeated `podman ps`, `docker ps`, log reads, and other heavy probes on every browser poll
+  - the UI refresh button bypasses the cache when you need an immediate update
 - Optional Ankaios workload query
   - attempts `ank` CLI commands (version-dependent)
 
