@@ -22,10 +22,21 @@ node "Driver Input ECU - Door\n(Arduino + RC522 RFID)" as ECU_DOOR {
   component "MQTT Publisher\nVehicle.Driver.Identifier.Subject" as DOOR_MQTT
 }
 
-node "Driver Input ECU - ThreadX\n(MXChip AZ3166, placeholder)" as ECU_THREADX {
-  component "Buttons + OLED UI" as TX_UI
-  component "NetX Duo Network Client" as TX_NET
-  component "VSS Pub/Sub App\n(placeholder)" as TX_APP
+node "ThreadX MCU Device 1\n(MXChip AZ3166, MQTT -> SOME/IP Gateway)" as ECU_THREADX_1 {
+  component "NetX Duo Network Stack" as TX1_NET
+  component "MQTT Subscriber\nTopics: DirectionIndication, Brake" as TX1_MQTT
+  component "Buttons A/B Input" as TX1_BTN
+  component "SOME/IP Publisher\n(Wi-Fi UDP notification)" as TX1_SOMEIP_TX
+  component "SOME/IP Subscriber\n(Wi-Fi UDP notification)" as TX1_SOMEIP_RX
+  component "Remote Button State Handler" as TX1_APP
+}
+
+node "ThreadX MCU Device 2\n(MXChip AZ3166, SOME/IP Peer)" as ECU_THREADX_2 {
+  component "NetX Duo Network Stack" as TX2_NET
+  component "Buttons A/B Input" as TX2_BTN
+  component "SOME/IP Publisher\n(Wi-Fi UDP notification)" as TX2_SOMEIP_TX
+  component "SOME/IP Subscriber\n(Wi-Fi UDP notification)" as TX2_SOMEIP_RX
+  component "Remote State Handler\n(LED/OLED/UI update)" as TX2_APP
 }
 
 node "MCU1 LED Control ECU\n(Arduino Uno + MCP2515)" as ECU_LED {
@@ -64,19 +75,26 @@ node "Raspberry Pi 4 - Placeholder" as PI4 {
 
 Driver --> JOY_SENSOR : joystick movement / press
 Driver --> DOOR_SENSOR : RFID card tap
-Driver --> TX_UI : optional button input
 
 JOY_SENSOR --> JOY_MQTT
 DOOR_SENSOR --> DOOR_MQTT
-TX_UI --> TX_APP
 
 JOY_MQTT --> VehicleLAN : MQTT JSON
 DOOR_MQTT --> VehicleLAN : MQTT JSON
-TX_APP --> VehicleLAN : optional VSS updates
 
 VehicleLAN --> MOSQ : MQTT publish/subscribe
 MOSQ --> BRIDGE : subscribed topic\nInVehicleTopics
 BRIDGE --> KDB_VEHICLE : gRPC Val/Set updates
+MOSQ --> TX1_MQTT : subscribe\nDirectionIndication, Brake
+TX1_MQTT --> TX1_SOMEIP_TX : map MQTT payload to SOME/IP event
+TX1_BTN --> TX1_SOMEIP_TX : provide Button A/B pressed state
+TX1_SOMEIP_TX --> VehicleLAN : SOME/IP over Wi-Fi (UDP)
+VehicleLAN --> TX2_SOMEIP_RX : SOME/IP event delivery
+TX2_SOMEIP_RX --> TX2_APP : apply remote direction/brake/button state
+TX2_BTN --> TX2_SOMEIP_TX : provide Button A/B pressed state
+TX2_SOMEIP_TX --> VehicleLAN : SOME/IP over Wi-Fi (UDP)
+VehicleLAN --> TX1_SOMEIP_RX : SOME/IP event delivery
+TX1_SOMEIP_RX --> TX1_APP : apply remote Button A/B state
 
 KDB_VEHICLE --> CAN_PROVIDER : target value subscription\n(val2dbc)
 CAN_PROVIDER --> KDB_VEHICLE : current value updates\n(dbc2val)

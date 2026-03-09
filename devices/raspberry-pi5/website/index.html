@@ -36,18 +36,22 @@
         <div class="architecture-canvas">
           <svg class="link-layer" viewBox="0 0 1200 720" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
             <path class="arch-link" data-conn="mqtt_transfer" d="M244 330 L286 330" />
-            <path class="arch-link" data-conn="mqtt_transfer" d="M450 330 L475 330" />
-            <path class="arch-link" data-conn="mqtt_transfer" d="M645 330 L665 330" />
-            <path class="arch-link" data-conn="databroker_signals" d="M835 330 L855 330" />
-            <path class="arch-link" data-conn="can_feedback" d="M1030 330 L1040 330" />
-            <path class="arch-link" data-conn="can_feedback" d="M1040 350 L1030 350" />
-            <path class="arch-link" data-conn="fms_pipeline" d="M750 284 L750 210 L987 210" />
-            <path class="arch-link" data-conn="ankaios_workloads" d="M632 162 L560 284" />
-            <path class="arch-link" data-conn="ankaios_workloads" d="M632 162 L750 284" />
-            <path class="arch-link" data-conn="ankaios_workloads" d="M632 162 L943 284" />
-            <path class="arch-link" data-conn="dozzle_monitoring" d="M640 575 L560 376" />
-            <path class="arch-link" data-conn="dozzle_monitoring" d="M640 575 L750 376" />
-            <path class="arch-link" data-conn="dozzle_monitoring" d="M640 575 L1112 376" />
+            <path class="arch-link" data-conn="mqtt_transfer" d="M414 330 L438 330" />
+            <path class="arch-link" data-conn="mqtt_transfer" d="M606 330 L624 330" />
+            <path class="arch-link" data-conn="databroker_signals" d="M792 330 L810 330" />
+            <path class="arch-link" data-conn="can_feedback" d="M978 330 L1002 330" />
+            <path class="arch-link" data-conn="can_feedback" d="M1002 350 L978 350" />
+            <path class="arch-link" data-conn="fms_pipeline" d="M708 284 L762 138" />
+            <path class="arch-link" data-conn="fms_pipeline" d="M792 298 L864 138" />
+            <path class="arch-link" data-conn="fms_pipeline" d="M948 138 L996 218" />
+            <path class="arch-link" data-conn="fms_pipeline" d="M1104 138 L1060 218" />
+            <path class="arch-link" data-conn="ankaios_workloads" d="M222 152 L333 284" />
+            <path class="arch-link" data-conn="ankaios_workloads" d="M222 152 L507 284" />
+            <path class="arch-link" data-conn="ankaios_workloads" d="M222 152 L894 284" />
+            <path class="arch-link" data-conn="dozzle_monitoring" d="M828 575 L708 374" />
+            <path class="arch-link" data-conn="dozzle_monitoring" d="M828 575 L765 138" />
+            <path class="arch-link" data-conn="dozzle_monitoring" d="M828 575 L948 138" />
+            <path class="arch-link" data-conn="dozzle_monitoring" d="M828 575 L1104 138" />
           </svg>
 
           <article class="node driver node-large" data-service="mqtt_transfer">
@@ -82,17 +86,32 @@
 
           <article class="node ankaios" data-service="ankaios_workloads">
             <h3>Ankaios</h3>
-            <p>Controls workloads and runtime state on the Pi5.</p>
+            <p>Controls Mosquitto, bridge, CAN provider, and website workloads.</p>
+          </article>
+
+          <article class="node node-small csv-provider" data-service="fms_pipeline">
+            <h3>csv-provider</h3>
+            <p>Feeds fleet demo signals into the Databroker.</p>
+          </article>
+
+          <article class="node node-small fms-forwarder" data-service="fms_pipeline">
+            <h3>fms-forwarder</h3>
+            <p>Reads Databroker signals and writes fleet telemetry.</p>
+          </article>
+
+          <article class="node node-small fms-consumer" data-service="fms_pipeline">
+            <h3>fms-consumer</h3>
+            <p>Consumes the fleet data stream in the backend stack.</p>
           </article>
 
           <article class="node fms" data-service="fms_pipeline">
-            <h3>FMS + Grafana</h3>
-            <p>Consumes vehicle signals for fleet analytics dashboards.</p>
+            <h3>Grafana + FMS Server</h3>
+            <p>Fleet dashboards and backend API views.</p>
           </article>
 
           <article class="node dozzle" data-service="dozzle_monitoring">
             <h3>Dozzle</h3>
-            <p>Live container logs and runtime observability.</p>
+            <p>Observes the Databroker and Docker Compose runtime services.</p>
           </article>
         </div>
       </div>

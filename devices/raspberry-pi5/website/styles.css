@@ -237,6 +237,19 @@ a {
   opacity: 0.8;
 }
 
+.node-small {
+  min-height: 74px;
+  padding: 0.48rem 0.56rem;
+}
+
+.node-small h3 {
+  font-size: 0.82rem;
+}
+
+.node-small p {
+  font-size: 0.7rem;
+}
+
 .node-large {
   --node-width: 18.333%;
   left: 2%;
@@ -244,51 +257,69 @@ a {
 }
 
 .mosquitto {
-  --node-width: 13.667%;
-  left: 23.833%;
+  --node-width: 13.5%;
+  left: 21%;
   top: 39.444%;
 }
 
 .bridge {
-  --node-width: 14.167%;
-  left: 39.583%;
+  --node-width: 14%;
+  left: 36.5%;
   top: 39.444%;
 }
 
 .kuksa {
-  --node-width: 14.167%;
-  left: 55.417%;
+  --node-width: 14%;
+  left: 52%;
   top: 39.444%;
 }
 
 .can-provider {
-  --node-width: 14.583%;
-  left: 71.25%;
+  --node-width: 14%;
+  left: 67.5%;
   top: 39.444%;
 }
 
 .blinker {
-  --node-width: 12.083%;
-  left: 86.667%;
+  --node-width: 12.5%;
+  left: 83.5%;
   top: 39.444%;
 }
 
 .ankaios {
-  --node-width: 15.417%;
-  left: 45%;
-  top: 10%;
+  --node-width: 15%;
+  left: 11%;
+  top: 9%;
+}
+
+.csv-provider {
+  --node-width: 13.5%;
+  left: 57%;
+  top: 8%;
+}
+
+.fms-forwarder {
+  --node-width: 14%;
+  left: 72%;
+  top: 8%;
+}
+
+.fms-consumer {
+  --node-width: 12%;
+  left: 86%;
+  top: 8%;
 }
 
 .fms {
-  --node-width: 17.5%;
-  left: 73.5%;
-  top: 13.889%;
+  --node-width: 18%;
+  left: 72%;
+  top: 24%;
 }
 
 .dozzle {
-  --node-width: 18.333%;
-  left: 44.167%;
-  top: 79.861%;
+  --node-width: 18%;
+  left: 60%;
+  top: 76%;
 }
 
 .legend {
