@@ -14,6 +14,10 @@
   },
   "ankaios_dashboard_url": "http://192.168.88.100:8084",
   "dozzle_url": "http://192.168.88.100:8080",
+  "fleet": {
+    "grafana_url": "http://192.168.88.100:3000",
+    "fms_server_url": "http://192.168.88.100:8081"
+  },
   "can_observer": {
     "enabled": true,
     "interface": "can0",

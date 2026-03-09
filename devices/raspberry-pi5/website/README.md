@@ -105,6 +105,55 @@ python3 api_server.py --host 0.0.0.0 --port 8090
 http://<pi5-ip>:8090
 ```
 
+## Run on a second PC with Docker
+
+If you want to run the website on another PC, there are two separate concerns:
+
+- the website server itself must listen on port `8090`
+- `site-config.json` must point to the systems the website should probe
+
+Important:
+
+- `http://localhost:8090/` only works if the website process or container is running on that same PC and port `8090` is published to the host
+- `localhost` inside `site-config.json` means "this machine" or, in Docker, "this container"
+- if MQTT/Kuksa/Ankaios/Dozzle still run on the Raspberry Pi 5, do not change those config entries to `localhost`; keep them on the Pi IP such as `192.168.88.100`
+- the same applies to the fleet endpoints: set `fleet.grafana_url` and `fleet.fms_server_url` to the Pi IP when the website runs on a second PC
+
+Build on the second PC:
+
+```bash
+docker build -t pi5-demo-website:latest devices/raspberry-pi5/website
+```
+
+Run on the second PC:
+
+```bash
+docker run --rm -p 8090:8090 -v "$(pwd)/devices/raspberry-pi5/website/site-config.json:/app/site-config.json:ro" pi5-demo-website:latest
+```
+
+PowerShell variant:
+
+```powershell
+docker run --rm -p 8090:8090 -v "${PWD}\devices\raspberry-pi5\website\site-config.json:/app/site-config.json:ro" pi5-demo-website:latest
+```
+
+Then open:
+
+```text
+http://localhost:8090/
+```
+
+If it still does not connect, check these first:
+
+1. The container is actually running: `docker ps`
+2. Port mapping exists: look for `0.0.0.0:8090->8090/tcp`
+3. The server did not exit on startup: `docker logs <container-id>`
+
+Remote probing note:
+
+- in the current fleet compose setup, Grafana is published on `3000`, Databroker on `55555`, and `fms-server` on `8081`
+- from a second PC, set `fleet.grafana_url` to `http://192.168.88.100:3000` and `fleet.fms_server_url` to `http://192.168.88.100:8081`
+
 ## How live status is detected
 
 The backend (`api_server.py`) polls:
