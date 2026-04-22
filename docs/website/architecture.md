@@ -16,29 +16,29 @@ graph TB
         RFID[Door RFID ECU<br/>Arduino + RC522]
     end
 
-    subgraph Raspberry Pi 5 – Ankaios Workloads
+    subgraph AnkaiosWL["Raspberry Pi 5 - Ankaios Workloads"]
         MOSQ[Mosquitto MQTT Broker<br/>:1883]
         BRIDGE[MQTT-to-gRPC Bridge]
         KDB[Kuksa Databroker 0.6.0<br/>:55555]
         CAN_PROV[Kuksa CAN Provider<br/>dbc2val + val2dbc]
-        SOCK[SocketCAN – can0]
+        SOCK["SocketCAN - can0"]
     end
 
-    subgraph Raspberry Pi 5 – Fleet Management Stack
+    subgraph FMStack["Raspberry Pi 5 - Fleet Management Stack"]
         FWD[FMS Forwarder]
         ZENOH[Zenoh Router]
         CONS[FMS Consumer]
         INFLUX[(InfluxDB 2.7)]
-        FMS_SRV[FMS Server – rFMS API<br/>:8081]
+        FMS_SRV["FMS Server - rFMS API<br/>:8081"]
         ANALYTICS[Fleet Analysis Backend<br/>Jakarta EE :8082]
         GRAFANA[Grafana<br/>:3000]
     end
 
-    subgraph CAN Bus – 500 kbit/s
+    subgraph CANBus1["CAN Bus - 500 kbit/s"]
         LED_ECU[MCU1 LED Control<br/>Arduino Uno + MCP2515<br/>WS2812 8-LED Strip]
     end
 
-    subgraph Optional – ThreadX SOME/IP
+    subgraph ThreadX["Optional - ThreadX SOME/IP"]
         AZ1[MXChip AZ3166 #1<br/>MQTT Sub + SOME/IP Pub]
         AZ2[MXChip AZ3166 #2<br/>SOME/IP Peer]
     end
@@ -135,14 +135,14 @@ Two MXChip AZ3166 boards form a SOME/IP peer pair:
 
 ```mermaid
 graph LR
-    subgraph WiFi Network – 192.168.88.x
+    subgraph WiFi["WiFi Network - 192.168.88.x"]
         PI5[Raspberry Pi 5<br/>192.168.88.100]
         JOY[Joystick ECU]
         RFID[RFID ECU]
         AZ1[AZ3166 #1]
         AZ2[AZ3166 #2]
     end
-    subgraph CAN Bus – 500 kbit/s
+    subgraph CANBus["CAN Bus - 500 kbit/s"]
         PI5 ---|RS485 CAN Hat| CAN0[can0]
         CAN0 --- MCU1[MCU1 LED Control<br/>MCP2515]
     end
