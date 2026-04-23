@@ -106,11 +106,15 @@ An Arduino Uno R4 WiFi reads an analog joystick (left/right + button press) and 
 - `Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling` (boolean)
 - `Vehicle.Body.Lights.Brake.IsActive` (string: `INACTIVE` / `ACTIVE` / `ADAPTIVE`)
 
+→ **[Full device guide: Joystick Input ECU](./device-joystick-ecu)**
+
 ### Arduino RFID Door ECU
 
 An Arduino with an RC522 RFID reader publishes the scanned card UID as:
 
 - `Vehicle.Driver.Identifier.Subject` (string)
+
+→ **[Full device guide: RFID Door ECU](./device-rfid-ecu)**
 
 ### MCU1 LED Control ECU
 
@@ -124,12 +128,16 @@ An Arduino Uno with an MCP2515 CAN transceiver listens for `BlinkerCommand` fram
 
 The MCU sends `BlinkerStatus` frames on CAN ID `0x121` back to the Raspberry Pi.
 
+→ **[Full device guide: LED Control ECU](./device-led-ecu)**
+
 ### ThreadX SOME/IP Extension (Optional)
 
 Two MXChip AZ3166 boards form a SOME/IP peer pair:
 
 - **Device 1** subscribes to MQTT blinker topics, maps the payload to SOME/IP events, and forwards button A/B state.
 - **Device 2** receives SOME/IP events and updates its LED/OLED display, also sending its own button state back.
+
+→ **[Full device guide: ThreadX SOME/IP ECU](./device-threadx-ecu)**
 
 ## Network Topology
 

@@ -193,6 +193,13 @@ Point the Arduino MQTT broker IP addresses to the Raspberry Pi 5. The default in
 - `devices/driver-input-ecu-arduino/mcu2-joystick-input/arduino_secrets.h`
 - `devices/driver-input-ecu-door/arduino_secrets.h`
 
+For detailed device-specific setup, wiring and firmware instructions, see:
+
+- [Joystick Input ECU](./device-joystick-ecu) — Joystick wiring, MQTT config and sketch upload
+- [LED Control ECU](./device-led-ecu) — MCP2515 wiring, CAN protocol and LED allocation
+- [RFID Door ECU](./device-rfid-ecu) — RC522 RFID reader setup
+- [ThreadX SOME/IP ECU](./device-threadx-ecu) — MXChip AZ3166 build, flash and SOME/IP configuration
+
 ## Shutdown
 
 ```bash

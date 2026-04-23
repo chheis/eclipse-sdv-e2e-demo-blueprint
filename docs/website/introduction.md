@@ -69,3 +69,10 @@ graph LR
 - [VSS / CAN Signal Mapping](./signal-mapping) — How VSS signals map to CAN frames
 - [Communication Workflow](./communication-workflow) — End-to-end signal flow
 - [Fleet Analysis Backend](./fleet-analysis) — Jakarta EE analytics service
+
+### Device Guides
+
+- [Joystick Input ECU](./device-joystick-ecu) — Arduino joystick ECU setup and configuration
+- [LED Control ECU](./device-led-ecu) — CAN-connected LED strip controller
+- [RFID Door ECU](./device-rfid-ecu) — Driver identification via RFID
+- [ThreadX SOME/IP ECU](./device-threadx-ecu) — Optional MXChip AZ3166 SOME/IP extension

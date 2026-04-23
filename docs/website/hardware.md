@@ -71,3 +71,12 @@ Connect the **CAN_H** and **CAN_L** lines between the Waveshare CAN Hat on the R
 | Docker + Docker Compose | Latest from Ubuntu repos |
 | Arduino IDE | 2.x |
 | Python | 3.11+ (for MQTT-to-gRPC bridge) |
+
+## Device Documentation
+
+For detailed setup, configuration and firmware instructions for each device, see:
+
+- [Joystick Input ECU](./device-joystick-ecu) — Arduino joystick wiring and MQTT config
+- [LED Control ECU](./device-led-ecu) — MCP2515 wiring, CAN protocol and LED allocation
+- [RFID Door ECU](./device-rfid-ecu) — RC522 RFID reader setup
+- [ThreadX SOME/IP ECU](./device-threadx-ecu) — MXChip AZ3166 build and SOME/IP configuration
