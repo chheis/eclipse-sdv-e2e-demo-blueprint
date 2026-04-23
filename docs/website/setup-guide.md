@@ -126,6 +126,14 @@ podman build -t grpc-mqtt-bridge:latest devices/raspberry-pi5/grpc-mqtt-bridge
 docker build -t grpc-mqtt-bridge:latest devices/raspberry-pi5/grpc-mqtt-bridge
 ```
 
+:::caution Image Tag
+The Ankaios manifest (`vehicle-signals.yaml`) references the GHCR image `ghcr.io/chheis/eclipse-sdv-e2e-demo-blueprint/grpc-mqtt-bridge:main`. If you build locally with tag `:latest`, either re-tag the image:
+```bash
+podman tag grpc-mqtt-bridge:latest ghcr.io/chheis/eclipse-sdv-e2e-demo-blueprint/grpc-mqtt-bridge:main
+```
+or edit the manifest to use your local tag.
+:::
+
 The GitHub Actions workflow also publishes this image to `ghcr.io` on pushes to `main`.
 
 ## 6. Start Everything
@@ -142,6 +150,12 @@ This startup script:
 2. Applies the Ankaios workload manifest (`vehicle-signals.yaml`)
 3. Starts **Dozzle** at `http://<pi-ip>:8080` for container log monitoring
 4. Builds and starts the **demo website** at `http://<pi-ip>:8090`
+
+:::tip Website Configuration
+The startup script injects `devices/raspberry-pi5/website/site-config.json` into the Ankaios website workload before applying the manifest. Edit this file to customize the dashboard.
+
+The website container runs **privileged** so it can probe SocketCAN activity (`candump` on `can0`). An optional legacy host-process mode can be enabled with `WEBSITE_ENABLED=true`.
+:::
 
 :::note
 The first run takes a long time because all container images must be pulled or built locally.

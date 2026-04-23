@@ -30,18 +30,19 @@ dtoverlay=mcp2515-can0,oscillator=12000000,interrupt=25,spimaxfrequency=2000000
   - ````git clone https://github.com/chheis/eclipse-sdv-e2e-demo-blueprint --recurse-submodules````
   - ````cd eclipse-sdv-e2e-demo-blueprint/devices/raspberry-pi5/ ````
   - ````chmod +x setup.sh ````
-  - Hint: if you miss --recurse-submodules in the begining use: ````git submodules init ```` and ````git pull --recurse-submodules````
+  - Hint: if you miss --recurse-submodules in the begining use: ````git submodule init ```` and ````git pull --recurse-submodules````
 - use the setup.sh
-  1. ````ANKAIOS_INSTALL_URL="https://github.com/eclipse-ankaios/ankaios/releases/latest/download/install.sh" ````
-  2. ```` sudo ./setup.sh````
+  1. ````export ANKAIOS_INSTALL_URL="https://github.com/eclipse-ankaios/ankaios/releases/latest/download/install.sh" ````
+  2. ```` sudo -E ./setup.sh````
 - or do those steps manual:
   1. disable the network energy saving mode ````/etc/NetworkManager/conf.d/default-wifi-powersave-on.conf```` and set wifi.powersave to 2 (disabled) instead of 3 (enabled)
   2.  install can-utils ````sudo apt-get install can-utils````
   3.  install net-tools ````sudo apt install net-tools ````
   4.  install curl ````sudo apt-get install curl````
   5.  install vim ````sudo apt-get install vim````
-  6.  install podman
-  7.  podman login to ghcr.io (if private packages needed)
+  6.  install podman ````sudo apt-get install podman````
+  7.  install Docker and Docker Compose ````sudo apt-get install docker.io docker-compose-v2```` and enable the service ````sudo systemctl enable --now docker````
+  8.  podman login to ghcr.io (if private packages needed)
   8.  enable socketCAN with startup (use /etc/systemd/network/80-can.network)
     -  ````sudo vim /etc/systemd/network/80-can.network````
     -  ````sudo systemctl enable systemd-networkd````
@@ -155,7 +156,7 @@ For Fleet Management/Influx/Grafana flow, `fms-forwarder` maps
 
 PlantUML source: `devices/raspberry-pi5/communication-workflow.puml`
 
-## Fleet Analysis Backend (runs on Pi 4)
+## Fleet Analysis Backend (runs on Pi 5)
 
 The fleet analysis service runs alongside the Fleet Management Blueprint stack via Docker Compose and
 connects to the same InfluxDB instance on the `fms-backend` network.
@@ -166,7 +167,7 @@ connects to the same InfluxDB instance on the `fms-backend` network.
 docker compose -f ./fms-blueprint-compose.yaml -f ./fms-blueprint-compose-zenoh.yaml up --detach
 ```
 
-2. The service will be available at `http://<pi4-ip>:8082/fleet-analysis/api`.
+2. The service will be available at `http://<pi5-ip>:8082/fleet-analysis/api`.
 
 Configuration is done via environment variables:
 

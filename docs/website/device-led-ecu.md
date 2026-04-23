@@ -41,13 +41,13 @@ See the [Hardware BOM](./hardware) for sourcing details and wiring instructions.
 
 ### Payload Encoding
 
-The Arduino expects a single-byte payload where each bit represents a VSS boolean signal. The same encoding is used when publishing status back to the Raspberry Pi.
+The Arduino expects a single-byte payload where each bit (or bit pair) represents a VSS signal. The same encoding is used when publishing status back to the Raspberry Pi.
 
-| Bit | VSS Signal |
+| Bit(s) | VSS Signal |
 | --- | --- |
 | 0 | `Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling` |
 | 1 | `Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling` |
-| 2 | `Vehicle.Body.Lights.Brake.IsActive` |
+| 2-3 | `Vehicle.Body.Lights.Brake.IsActive` (0=INACTIVE, 1=ACTIVE, 2=ADAPTIVE) |
 
 ### CAN IDs
 

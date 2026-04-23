@@ -1,6 +1,6 @@
 # MCU1 LED Control (Arduino Uno + MCP2515)
 
-This device drives an 8‑LED strip over CAN and reports its current light status to the Raspberry Pi 4 running the Kuksa CAN Provider.
+This device drives an 8‑LED strip over CAN and reports its current light status to the Raspberry Pi 5 running the Kuksa CAN Provider.
 
 ## Hardware
 
@@ -23,13 +23,13 @@ This device drives an 8‑LED strip over CAN and reports its current light statu
 
 ## CAN payload
 
-The Arduino expects a single‑byte payload where each bit represents a VSS boolean signal. The same encoding is used when publishing status back to the Raspberry Pi 4.
+The Arduino expects a single‑byte payload where each bit (or bit pair) represents a VSS signal. The same encoding is used when publishing status back to the Raspberry Pi 5.
 
-| Bit | VSS signal |
+| Bit(s) | VSS signal |
 | --- | --- |
 | 0 | `Vehicle.Body.Lights.DirectionIndicator.Left.IsSignaling` |
 | 1 | `Vehicle.Body.Lights.DirectionIndicator.Right.IsSignaling` |
-| 2 | `Vehicle.Body.Lights.Brake.IsActive` |
+| 2–3 | `Vehicle.Body.Lights.Brake.IsActive` (0=INACTIVE, 1=ACTIVE, 2=ADAPTIVE) |
 
 ### CAN IDs
 

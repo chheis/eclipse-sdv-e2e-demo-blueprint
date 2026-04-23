@@ -42,8 +42,8 @@ Accepts a JSON array of vehicle snapshots and returns computed summary statistic
 
 ```json
 [
-  { "vehicleId": "truck-01", "speedKph": 85.2, "batterySoc": 72.5, "braking": false },
-  { "vehicleId": "truck-02", "speedKph": 60.0, "batterySoc": 45.0, "braking": true }
+  { "vehicleId": "truck-01", "speedKph": 85.2, "batterySoc": 0.78, "brakeActive": false, "updatedAt": "2024-06-10T10:15:30Z" },
+  { "vehicleId": "truck-02", "speedKph": 60.0, "batterySoc": 0.52, "brakeActive": true, "updatedAt": "2024-06-10T10:15:32Z" }
 ]
 ```
 
@@ -53,8 +53,8 @@ Accepts a JSON array of vehicle snapshots and returns computed summary statistic
 {
   "vehicleCount": 2,
   "averageSpeedKph": 72.6,
-  "minBatterySoc": 45.0,
-  "maxBatterySoc": 72.5,
+  "minBatterySoc": 0.52,
+  "maxBatterySoc": 0.78,
   "brakingVehicles": 1
 }
 ```
@@ -62,6 +62,33 @@ Accepts a JSON array of vehicle snapshots and returns computed summary statistic
 ### `POST /api/telemetry/ingest`
 
 Writes header and/or snapshot measurements into InfluxDB. Used for ingesting telemetry data from external sources.
+
+**Request body:**
+
+```json
+{
+  "vin": "truck-001",
+  "trigger": "periodic",
+  "createdDateTime": 1737940602000,
+  "header": {
+    "hrTotalVehicleDistance": 12345.6,
+    "grossCombinationVehicleWeight": 18100.2,
+    "totalEngineHours": 82.5,
+    "engineTotalFuelUsed": 221.9,
+    "driver1Id": "driver-01",
+    "driver1IdCardIssuer": "fleet"
+  },
+  "snapshot": {
+    "latitude": 37.7749,
+    "longitude": -122.4194,
+    "speed": 54.2,
+    "positionDateTime": 1737940602,
+    "wheelBasedSpeed": 53.7,
+    "fuelLevel1": 0.42,
+    "parkingBrakeSwitch": false
+  }
+}
+```
 
 ### `GET /api/analysis/stats`
 
@@ -91,6 +118,7 @@ The service is configured via environment variables:
 | `INFLUXDB_TOKEN` | — | InfluxDB authentication token |
 | `INFLUXDB_TOKEN_FILE` | — | Path to token file (alternative to `INFLUXDB_TOKEN`) |
 | `INFLUXDB_STATS_INTERVAL_SECONDS` | `30` | Interval for refreshing fleet statistics |
+| `INFLUXDB_STATS_INITIAL_DELAY_SECONDS` | `10` | Initial delay before the first stats run |
 
 ## Build and Run
 
@@ -102,6 +130,8 @@ mvn package
 ```
 
 ### Run Standalone (Payara Micro)
+
+Download [Payara Micro 6](https://www.payara.fish/downloads/payara-platform-community-edition/), then deploy:
 
 ```bash
 java -jar payara-micro.jar \

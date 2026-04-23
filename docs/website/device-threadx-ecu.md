@@ -138,6 +138,11 @@ Edit `external/challenge-threadx-playRemote/MXChip/AZ3166/app/cloud_config.h`:
 | `WIFI_PASSWORD` | — | Wi-Fi network password |
 | `MQTT_BROKER_ADDRESS` | `192.168.88.100` | MQTT broker IP (Raspberry Pi 5) |
 | `MQTT_BROKER_PORT` | `1883` | MQTT broker port |
+| `SOMEIP_SIGNAL_TARGET_IP` | — | Remote SOME/IP endpoint IP (when SOME/IP enabled) |
+| `SOMEIP_SIGNAL_TARGET_PORT` | — | Remote SOME/IP endpoint port |
+| `SOMEIP_SIGNAL_SERVICE_ID` | — | Shared SOME/IP service ID |
+| `SOMEIP_SIGNAL_EVENT_ID` | — | Shared SOME/IP event ID |
+| `SOMEIP_SIGNAL_CLIENT_ID` | — | SOME/IP client identifier |
 
 ## Runtime Operation
 
